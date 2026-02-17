@@ -251,7 +251,16 @@
       };
       backupBox.value = JSON.stringify(payload, null, 2);
     }
-
+    // Téléchargement fichier
+const blob = new Blob([backupBox.value], { type: "application/json" });
+const url = URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url;
+a.download = `pipboy-backup-${new Date().toISOString().slice(0,10)}.json`;
+document.body.appendChild(a);
+a.click();
+a.remove();
+URL.revokeObjectURL(url);
     function applyImport(){
       if (!backupBox) return;
       let obj;
