@@ -283,7 +283,23 @@
     if (btnImport) btnImport.addEventListener('click', () => { if (backupBox) backupBox.focus(); });
     if (btnClear && backupBox) btnClear.addEventListener('click', () => { backupBox.value = ""; });
     if (btnApply) btnApply.addEventListener('click', applyImport);
-
+// Import via fichier .json
+   const fileImport = $('fileImport');
+   if (fileImport) {
+    fileImport.addEventListener('change', async () => {
+    const file = fileImport.files && fileImport.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      if (backupBox) backupBox.value = text;
+      applyImport();
+     } catch (e) {
+      alert("Impossible de lire le fichier 😵‍💫");
+     } finally {
+      fileImport.value = "";
+      }
+    });
+}
     // PWA offline
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js');
