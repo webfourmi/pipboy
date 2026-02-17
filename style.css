@@ -99,3 +99,9 @@ button.mini{ padding:6px 10px; border-radius:10px; }
 }
 .hint{ color: var(--muted); margin:10px 0 0; font-size:12px; }
 .tiny{ color: var(--muted); font-size:12px; letter-spacing:.5px; }
+html, body { height: 100%; }
+.shell { min-height: calc(100vh - 120px); }
+.topbar { z-index: 10; }
+.bottombar { z-index: 10; }
+.view { display: block !important; }
+.tabs { position: sticky; top: 54px; z-index: 9; }
