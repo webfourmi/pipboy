@@ -1,4 +1,4 @@
-:root{
+.:root{
   --bg:#07120c;
   --panel:#0b1a12;
   --line:#1fe38a;
@@ -114,4 +114,7 @@ html, body { height: 100%; }
   border-top:1px solid rgba(31,227,138,.25);
   background: linear-gradient(180deg, rgba(11,26,18,.65), rgba(7,18,12,.55));
   border-radius: 14px;
+}
+.card textarea#backupBox{
+  margin-top: 10px;
 }
