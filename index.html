@@ -27,6 +27,21 @@
     <section class="view active" id="status">
       <h1>STATUT</h1>
 
+      <!-- PROFILS -->
+      <div class="card">
+        <h2>Profil</h2>
+        <div class="row">
+          <select id="profileSelect"></select>
+          <button id="newProfile" type="button">Nouveau</button>
+        </div>
+        <div class="row">
+          <input id="profileName" type="text" placeholder="Nom du profil">
+          <button id="saveProfileName" type="button">Renommer</button>
+          <button id="deleteProfile" class="danger" type="button">Supprimer</button>
+        </div>
+        <p class="hint">Chaque profil a ses propres PV/Énergie/Journal/Inventaire.</p>
+      </div>
+
       <div class="grid">
         <div class="card">
           <h2>Énergie</h2>
@@ -54,7 +69,7 @@
             <option>BLESSÉ</option>
             <option>CRITIQUE</option>
           </select>
-          <p class="hint">Tout est sauvegardé sur le téléphone.</p>
+          <p class="hint">Sauvegarde locale automatique.</p>
         </div>
       </div>
     </section>
@@ -74,7 +89,7 @@
 
       <div class="card">
         <h2>Sauvegarde</h2>
-        <p class="hint">Exporter/Importer toutes les données (STATUS + JOURNAL + INV).</p>
+        <p class="hint">Exporter/Importer tous les profils (et le profil actif).</p>
 
         <div class="row">
           <button id="exportAll" type="button">Exporter JSON</button>
@@ -85,7 +100,7 @@
           </label>
         </div>
 
-        <textarea id="backupBox" rows="8" placeholder="Ton JSON apparaîtra ici (ou colle un JSON à importer)…"></textarea>
+        <textarea id="backupBox" rows="8" placeholder="JSON ici… (export ou collage)"></textarea>
 
         <div class="row right">
           <button id="clearBox" class="danger" type="button">Vider</button>
@@ -114,7 +129,7 @@
     </section>
 
     <footer class="footnote">
-      <div class="tiny">LOCAL SAVE • CONSOLE MODE</div>
+      <div class="tiny" id="activeProfileHint">PROFIL: -- • LOCAL SAVE</div>
     </footer>
   </main>
 
@@ -129,15 +144,13 @@
     }
     tick(); setInterval(tick, 1000);
 
-    // Navigation onglets (robuste)
+    // Navigation onglets
     document.querySelectorAll('.tab').forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.dataset.view;
         if (!target) return;
-
         document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-
         btn.classList.add('active');
         const section = document.getElementById(target);
         if (section) section.classList.add('active');
@@ -148,12 +161,163 @@
     const $ = (id) => document.getElementById(id);
     const store = {
       get(k, fallback){ try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } },
-      set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+      set(k, v){ localStorage.setItem(k, JSON.stringify(v)); },
+      del(k){ localStorage.removeItem(k); }
     };
 
-    // STATUS
-    const energy = $('energy'), hp = $('hp'), state = $('state');
+    // --- MULTI-PROFILS ---
+    // Structure:
+    // pipboy_profiles = [{id,name,createdAt}, ...]
+    // pipboy_active_profile = "id"
+    // pipboy_profile_<id> = {status, log, inv}
+    const PROFILES_KEY = "pipboy_profiles";
+    const ACTIVE_KEY = "pipboy_active_profile";
 
+    function uid(){
+      return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+    }
+
+    function defaultProfileData(){
+      return {
+        status: { energy: 70, hp: 85, state: "OK" },
+        log: "",
+        inv: []
+      };
+    }
+
+    function getProfiles(){
+      return store.get(PROFILES_KEY, []);
+    }
+    function setProfiles(arr){
+      store.set(PROFILES_KEY, arr);
+    }
+    function getActiveId(){
+      return store.get(ACTIVE_KEY, null);
+    }
+    function setActiveId(id){
+      store.set(ACTIVE_KEY, id);
+    }
+    function profileKey(id){
+      return `pipboy_profile_${id}`;
+    }
+    function getProfileData(id){
+      return store.get(profileKey(id), defaultProfileData());
+    }
+    function setProfileData(id, data){
+      store.set(profileKey(id), data);
+    }
+    function deleteProfileData(id){
+      store.del(profileKey(id));
+    }
+
+    // Migration: si l'ancien format existe (status/log/inv), on le copie dans un profil "P1"
+    function migrateIfNeeded(){
+      const profiles = getProfiles();
+      if (profiles.length > 0) return;
+
+      const oldStatus = store.get("status", null);
+      const oldLog = store.get("log", null);
+      const oldInv = store.get("inv", null);
+
+      const id = uid();
+      const name = "P1";
+      const meta = [{ id, name, createdAt: new Date().toISOString() }];
+      setProfiles(meta);
+      setActiveId(id);
+
+      const data = defaultProfileData();
+      if (oldStatus) data.status = oldStatus;
+      if (typeof oldLog === "string") data.log = oldLog;
+      if (Array.isArray(oldInv)) data.inv = oldInv;
+
+      setProfileData(id, data);
+      // (optionnel) on laisse l'ancien stockage en place, ça ne gêne pas
+    }
+
+    migrateIfNeeded();
+
+    // UI profils
+    const profileSelect = $("profileSelect");
+    const profileName = $("profileName");
+    const activeHint = $("activeProfileHint");
+
+    function refreshProfilesUI(){
+      const profiles = getProfiles();
+      const activeId = getActiveId();
+
+      if (!profileSelect) return;
+      profileSelect.innerHTML = "";
+
+      profiles.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.name;
+        if (p.id === activeId) opt.selected = true;
+        profileSelect.appendChild(opt);
+      });
+
+      const activeMeta = profiles.find(p => p.id === activeId) || profiles[0];
+      if (activeMeta){
+        if (profileName) profileName.value = activeMeta.name;
+        if (activeHint) activeHint.textContent = `PROFIL: ${activeMeta.name} • LOCAL SAVE`;
+      }
+    }
+
+    function ensureActiveProfile(){
+      const profiles = getProfiles();
+      let activeId = getActiveId();
+      if (!activeId || !profiles.find(p => p.id === activeId)){
+        activeId = profiles[0]?.id || null;
+        if (activeId) setActiveId(activeId);
+      }
+      return activeId;
+    }
+
+    function loadActiveProfileToUI(){
+      const id = ensureActiveProfile();
+      if (!id) return;
+
+      const data = getProfileData(id);
+
+      // STATUS
+      if ($("energy")) $("energy").value = data.status.energy ?? 70;
+      if ($("hp")) $("hp").value = data.status.hp ?? 85;
+      if ($("state")) $("state").value = data.status.state ?? "OK";
+
+      syncBar($("energy"), $("energyFill"), $("energyLabel"));
+      syncBar($("hp"), $("hpFill"), $("hpLabel"));
+
+      // DATA
+      if ($("log")) $("log").value = data.log ?? "";
+
+      // INV
+      renderInv();
+      refreshProfilesUI();
+    }
+
+    function saveActiveProfileFromUI(){
+      const id = ensureActiveProfile();
+      if (!id) return;
+
+      const current = getProfileData(id);
+
+      const energyEl = $("energy"), hpEl = $("hp"), stateEl = $("state"), logEl = $("log");
+      const status = {
+        energy: energyEl ? Number(energyEl.value) : (current.status.energy ?? 70),
+        hp: hpEl ? Number(hpEl.value) : (current.status.hp ?? 85),
+        state: stateEl ? stateEl.value : (current.status.state ?? "OK"),
+      };
+
+      const updated = {
+        status,
+        log: logEl ? logEl.value : (current.log ?? ""),
+        inv: current.inv ?? []
+      };
+
+      setProfileData(id, updated);
+    }
+
+    // --- STATUS (barres) ---
     function syncBar(rangeEl, fillEl, labelEl){
       if (!rangeEl || !fillEl || !labelEl) return;
       const val = Number(rangeEl.value);
@@ -161,99 +325,152 @@
       labelEl.textContent = `${val}%`;
     }
 
-    function saveStatus(){
-      if (!energy || !hp || !state) return;
-      store.set('status', { energy: Number(energy.value), hp: Number(hp.value), state: state.value });
-    }
-
-    function loadStatus(){
-      const s = store.get('status', { energy: 70, hp: 85, state: 'OK' });
-      if (energy) energy.value = s.energy;
-      if (hp) hp.value = s.hp;
-      if (state) state.value = s.state;
-
-      syncBar(energy, $('energyFill'), $('energyLabel'));
-      syncBar(hp, $('hpFill'), $('hpLabel'));
-    }
-
-    ['input','change'].forEach(evt => {
-      if (energy) energy.addEventListener(evt, () => { syncBar(energy, $('energyFill'), $('energyLabel')); saveStatus(); });
-      if (hp) hp.addEventListener(evt, () => { syncBar(hp, $('hpFill'), $('hpLabel')); saveStatus(); });
-      if (state) state.addEventListener(evt, saveStatus);
+    ["input","change"].forEach(evt => {
+      const e = $("energy");
+      const h = $("hp");
+      const s = $("state");
+      if (e) e.addEventListener(evt, () => { syncBar(e, $("energyFill"), $("energyLabel")); saveActiveProfileFromUI(); });
+      if (h) h.addEventListener(evt, () => { syncBar(h, $("hpFill"), $("hpLabel")); saveActiveProfileFromUI(); });
+      if (s) s.addEventListener(evt, () => { saveActiveProfileFromUI(); });
     });
 
-    loadStatus();
+    // --- DATA (journal) ---
+    const btnSaveLog = $("saveLog");
+    const btnClearLog = $("clearLog");
+    if (btnSaveLog) btnSaveLog.addEventListener("click", () => saveActiveProfileFromUI());
+    if (btnClearLog) btnClearLog.addEventListener("click", () => { if ($("log")) $("log").value = ""; saveActiveProfileFromUI(); });
 
-    // DATA (journal)
-    const log = $('log');
-    function loadLog(){ if (log) log.value = store.get('log', ''); }
-    function saveLog(){ if (log) store.set('log', log.value); }
-
-    const btnSaveLog = $('saveLog');
-    const btnClearLog = $('clearLog');
-    if (btnSaveLog) btnSaveLog.addEventListener('click', saveLog);
-    if (btnClearLog) btnClearLog.addEventListener('click', () => { if (log) log.value=''; saveLog(); });
-
-    loadLog();
-
-    // INV (inventaire)
-    const itemsUl = $('items');
+    // --- INV ---
     function renderInv(){
-      const arr = store.get('inv', []);
+      const id = ensureActiveProfile();
+      const data = id ? getProfileData(id) : defaultProfileData();
+
+      const itemsUl = $("items");
       if (!itemsUl) return;
 
-      itemsUl.innerHTML = '';
+      const arr = Array.isArray(data.inv) ? data.inv : [];
+      itemsUl.innerHTML = "";
+
       arr.forEach((txt, idx) => {
-        const li = document.createElement('li');
+        const li = document.createElement("li");
         li.innerHTML = `<span>${txt}</span><button class="mini" data-i="${idx}" type="button">X</button>`;
         itemsUl.appendChild(li);
       });
 
-      itemsUl.querySelectorAll('button.mini').forEach(b => {
-        b.addEventListener('click', () => {
-          const arr2 = store.get('inv', []);
-          arr2.splice(Number(b.dataset.i), 1);
-          store.set('inv', arr2);
+      itemsUl.querySelectorAll("button.mini").forEach(b => {
+        b.addEventListener("click", () => {
+          const id2 = ensureActiveProfile();
+          if (!id2) return;
+          const d2 = getProfileData(id2);
+          const inv2 = Array.isArray(d2.inv) ? d2.inv : [];
+          inv2.splice(Number(b.dataset.i), 1);
+          d2.inv = inv2;
+          setProfileData(id2, d2);
           renderInv();
         });
       });
     }
 
-    const btnAddItem = $('addItem');
-    if (btnAddItem) btnAddItem.addEventListener('click', () => {
-      const input = $('itemInput');
-      if (!input) return;
-      const val = input.value.trim();
-      if(!val) return;
-      const arr = store.get('inv', []);
-      arr.unshift(val);
-      store.set('inv', arr);
-      input.value = '';
+    const btnAddItem = $("addItem");
+    if (btnAddItem) btnAddItem.addEventListener("click", () => {
+      const input = $("itemInput");
+      const val = input ? input.value.trim() : "";
+      if (!val) return;
+
+      const id = ensureActiveProfile();
+      if (!id) return;
+
+      const data = getProfileData(id);
+      const inv = Array.isArray(data.inv) ? data.inv : [];
+      inv.unshift(val);
+      data.inv = inv;
+      setProfileData(id, data);
+
+      if (input) input.value = "";
       renderInv();
     });
 
-    const btnClearInv = $('clearInv');
-    if (btnClearInv) btnClearInv.addEventListener('click', () => { store.set('inv', []); renderInv(); });
+    const btnClearInv = $("clearInv");
+    if (btnClearInv) btnClearInv.addEventListener("click", () => {
+      const id = ensureActiveProfile();
+      if (!id) return;
+      const data = getProfileData(id);
+      data.inv = [];
+      setProfileData(id, data);
+      renderInv();
+    });
 
-    renderInv();
+    // --- Profils: changer / créer / renommer / supprimer ---
+    if (profileSelect) profileSelect.addEventListener("change", () => {
+      setActiveId(profileSelect.value);
+      loadActiveProfileToUI();
+    });
 
-    // EXPORT / IMPORT (tout) - SAFE + téléchargement fichier
-    const backupBox = $('backupBox');
+    const btnNewProfile = $("newProfile");
+    if (btnNewProfile) btnNewProfile.addEventListener("click", () => {
+      const profiles = getProfiles();
+      const id = uid();
+      const name = `P${profiles.length + 1}`;
+      profiles.push({ id, name, createdAt: new Date().toISOString() });
+      setProfiles(profiles);
+      setProfileData(id, defaultProfileData());
+      setActiveId(id);
+      loadActiveProfileToUI();
+    });
+
+    const btnSaveName = $("saveProfileName");
+    if (btnSaveName) btnSaveName.addEventListener("click", () => {
+      const id = ensureActiveProfile();
+      if (!id) return;
+      const newName = (profileName ? profileName.value : "").trim();
+      if (!newName) return;
+
+      const profiles = getProfiles();
+      const p = profiles.find(x => x.id === id);
+      if (p) p.name = newName;
+      setProfiles(profiles);
+      refreshProfilesUI();
+    });
+
+    const btnDeleteProfile = $("deleteProfile");
+    if (btnDeleteProfile) btnDeleteProfile.addEventListener("click", () => {
+      const profiles = getProfiles();
+      if (profiles.length <= 1){
+        alert("Impossible: il faut garder au moins 1 profil.");
+        return;
+      }
+      const id = ensureActiveProfile();
+      const p = profiles.find(x => x.id === id);
+      const ok = confirm(`Supprimer le profil "${p ? p.name : id}" ?`);
+      if (!ok) return;
+
+      const filtered = profiles.filter(x => x.id !== id);
+      setProfiles(filtered);
+      deleteProfileData(id);
+
+      setActiveId(filtered[0].id);
+      loadActiveProfileToUI();
+    });
+
+    // --- EXPORT / IMPORT (tous profils) ---
+    const backupBox = $("backupBox");
 
     function exportAll(){
-      if (!backupBox) return;
-
       const payload = {
-        v: 1,
+        v: 2,
         exportedAt: new Date().toISOString(),
-        status: store.get('status', { energy: 70, hp: 85, state: 'OK' }),
-        log: store.get('log', ''),
-        inv: store.get('inv', [])
+        activeProfileId: getActiveId(),
+        profiles: getProfiles(),
+        dataByProfile: {}
       };
 
-      backupBox.value = JSON.stringify(payload, null, 2);
+      payload.profiles.forEach(p => {
+        payload.dataByProfile[p.id] = getProfileData(p.id);
+      });
 
-      // Téléchargement fichier .json (pratique sur mobile)
+      if (backupBox) backupBox.value = JSON.stringify(payload, null, 2);
+
+      // Téléchargement .json
       try {
         const blob = new Blob([backupBox.value], { type: "application/json" });
         const url = URL.createObjectURL(blob);
@@ -264,52 +481,63 @@
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
-      } catch (e) {
-        // si le téléchargement est bloqué, le JSON reste dans la zone de texte
-      }
+      } catch (e) {}
     }
 
     function applyImport(){
       if (!backupBox) return;
       let obj;
-      try {
-        obj = JSON.parse(backupBox.value);
-      } catch (e) {
-        alert("JSON invalide 😵‍💫");
+      try { obj = JSON.parse(backupBox.value); }
+      catch { alert("JSON invalide 😵‍💫"); return; }
+
+      if (!obj || typeof obj !== "object") { alert("JSON invalide"); return; }
+
+      // v2 recommandé
+      if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object") {
+        setProfiles(obj.profiles);
+        Object.keys(obj.dataByProfile).forEach(id => {
+          setProfileData(id, obj.dataByProfile[id]);
+        });
+        if (obj.activeProfileId) setActiveId(obj.activeProfileId);
+        loadActiveProfileToUI();
+        alert("Import appliqué ✅");
         return;
       }
-      if (!obj || typeof obj !== 'object') { alert("JSON invalide"); return; }
 
-      if (obj.status) store.set('status', obj.status);
-      if (typeof obj.log === 'string') store.set('log', obj.log);
-      if (Array.isArray(obj.inv)) store.set('inv', obj.inv);
+      // fallback: ancien export v1 (status/log/inv)
+      if (obj.status || obj.log || obj.inv) {
+        const id = ensureActiveProfile();
+        const data = getProfileData(id);
+        if (obj.status) data.status = obj.status;
+        if (typeof obj.log === "string") data.log = obj.log;
+        if (Array.isArray(obj.inv)) data.inv = obj.inv;
+        setProfileData(id, data);
+        loadActiveProfileToUI();
+        alert("Import appliqué sur le profil actif ✅");
+        return;
+      }
 
-      loadStatus();
-      loadLog();
-      renderInv();
-
-      alert("Import appliqué ✅");
+      alert("Format non reconnu 😵‍💫");
     }
 
-    const btnExport = $('exportAll');
-    const btnClear  = $('clearBox');
-    const btnApply  = $('applyImport');
+    const btnExport = $("exportAll");
+    const btnClear  = $("clearBox");
+    const btnApply  = $("applyImport");
 
-    if (btnExport) btnExport.addEventListener('click', exportAll);
-    if (btnClear && backupBox) btnClear.addEventListener('click', () => { backupBox.value = ""; });
-    if (btnApply) btnApply.addEventListener('click', applyImport);
+    if (btnExport) btnExport.addEventListener("click", exportAll);
+    if (btnClear && backupBox) btnClear.addEventListener("click", () => { backupBox.value = ""; });
+    if (btnApply) btnApply.addEventListener("click", applyImport);
 
-    // Import via fichier .json
-    const fileImport = $('fileImport');
+    const fileImport = $("fileImport");
     if (fileImport) {
-      fileImport.addEventListener('change', async () => {
+      fileImport.addEventListener("change", async () => {
         const file = fileImport.files && fileImport.files[0];
         if (!file) return;
         try {
           const text = await file.text();
           if (backupBox) backupBox.value = text;
           applyImport();
-        } catch (e) {
+        } catch {
           alert("Impossible de lire le fichier 😵‍💫");
         } finally {
           fileImport.value = "";
@@ -317,9 +545,13 @@
       });
     }
 
+    // Chargement initial
+    refreshProfilesUI();
+    loadActiveProfileToUI();
+
     // PWA offline
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js");
     }
   </script>
 </body>
