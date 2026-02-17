@@ -18,30 +18,24 @@
 
   <main class="shell">
     <nav class="tabs">
-      <button class="tab active" data-view="status">STATUS</button>
-      <button class="tab" data-view="data">DATA</button>
-      <button class="tab" data-view="inv">INV</button>
+      <button class="tab active" data-view="status" type="button">STATUS</button>
+      <button class="tab" data-view="data" type="button">DATA</button>
+      <button class="tab" data-view="inv" type="button">INV</button>
     </nav>
 
+    <!-- STATUS -->
     <section class="view active" id="status">
       <h1>STATUT</h1>
 
       <div class="grid">
         <div class="card">
-  <h2>Sauvegarde</h2>
-  <p class="hint">Exporter/Importer toutes les données (STATUS + JOURNAL + INV).</p>
-
-  <div class="row">
-    <button id="exportAll">Exporter JSON</button>
-    <button id="importAll">Importer JSON</button>
-  </div>
-
-  <textarea id="backupBox" rows="8" placeholder="Ton JSON apparaîtra ici (ou colle un JSON à importer)…"></textarea>
-
-  <div class="row right">
-    <button id="clearBox" class="danger">Vider</button>
-    <button id="applyImport">Appliquer l’import</button>
-  </div
+          <h2>Énergie</h2>
+          <div class="bar"><div class="barfill" id="energyFill" style="width:70%"></div></div>
+          <div class="row">
+            <input id="energy" type="range" min="0" max="100" value="70">
+            <span id="energyLabel">70%</span>
+          </div>
+        </div>
 
         <div class="card">
           <h2>PV</h2>
@@ -65,34 +59,56 @@
       </div>
     </section>
 
+    <!-- DATA -->
     <section class="view" id="data">
       <h1>DATA</h1>
+
       <div class="card">
         <h2>Journal de bord</h2>
         <textarea id="log" rows="8" placeholder="Note rapide…"></textarea>
         <div class="row right">
-          <button id="clearLog" class="danger">Effacer</button>
-          <button id="saveLog">Sauver</button>
+          <button id="clearLog" class="danger" type="button">Effacer</button>
+          <button id="saveLog" type="button">Sauver</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Sauvegarde</h2>
+        <p class="hint">Exporter/Importer toutes les données (STATUS + JOURNAL + INV).</p>
+
+        <div class="row">
+          <button id="exportAll" type="button">Exporter JSON</button>
+          <button id="importAll" type="button">Importer JSON</button>
+        </div>
+
+        <textarea id="backupBox" rows="8" placeholder="Ton JSON apparaîtra ici (ou colle un JSON à importer)…"></textarea>
+
+        <div class="row right">
+          <button id="clearBox" class="danger" type="button">Vider</button>
+          <button id="applyImport" type="button">Appliquer l’import</button>
         </div>
       </div>
     </section>
 
+    <!-- INV -->
     <section class="view" id="inv">
       <h1>INVENTAIRE</h1>
+
       <div class="card">
         <h2>Objets</h2>
         <div class="row">
           <input id="itemInput" type="text" placeholder="Ajouter un objet (ex: Kit de réparation)">
-          <button id="addItem">Ajouter</button>
+          <button id="addItem" type="button">Ajouter</button>
         </div>
+
         <ul id="items" class="list"></ul>
+
         <div class="row right">
-          <button id="clearInv" class="danger">Vider</button>
+          <button id="clearInv" class="danger" type="button">Vider</button>
         </div>
       </div>
     </section>
 
-    <!-- footer normal (pas flottant) -->
     <footer class="footnote">
       <div class="tiny">LOCAL SAVE • CONSOLE MODE</div>
     </footer>
@@ -104,21 +120,27 @@
       const d = new Date();
       const hh = String(d.getHours()).padStart(2,'0');
       const mm = String(d.getMinutes()).padStart(2,'0');
-      document.getElementById('clock').textContent = `${hh}:${mm}`;
+      const el = document.getElementById('clock');
+      if (el) el.textContent = `${hh}:${mm}`;
     }
     tick(); setInterval(tick, 1000);
 
-    // Onglets
+    // Navigation onglets (robuste)
     document.querySelectorAll('.tab').forEach(btn => {
       btn.addEventListener('click', () => {
+        const target = btn.dataset.view;
+        if (!target) return;
+
         document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+
         btn.classList.add('active');
-        document.getElementById(btn.dataset.view).classList.add('active');
+        const section = document.getElementById(target);
+        if (section) section.classList.add('active');
       });
     });
 
-    // Stockage local
+    // Helpers
     const $ = (id) => document.getElementById(id);
     const store = {
       get(k, fallback){ try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } },
@@ -127,45 +149,62 @@
 
     // STATUS
     const energy = $('energy'), hp = $('hp'), state = $('state');
+
     function syncBar(rangeEl, fillEl, labelEl){
+      if (!rangeEl || !fillEl || !labelEl) return;
       const val = Number(rangeEl.value);
       fillEl.style.width = `${val}%`;
       labelEl.textContent = `${val}%`;
     }
+
     function saveStatus(){
+      if (!energy || !hp || !state) return;
       store.set('status', { energy: Number(energy.value), hp: Number(hp.value), state: state.value });
     }
+
     function loadStatus(){
       const s = store.get('status', { energy: 70, hp: 85, state: 'OK' });
-      energy.value = s.energy; hp.value = s.hp; state.value = s.state;
+      if (energy) energy.value = s.energy;
+      if (hp) hp.value = s.hp;
+      if (state) state.value = s.state;
+
       syncBar(energy, $('energyFill'), $('energyLabel'));
       syncBar(hp, $('hpFill'), $('hpLabel'));
     }
+
     ['input','change'].forEach(evt => {
-      energy.addEventListener(evt, () => { syncBar(energy, $('energyFill'), $('energyLabel')); saveStatus(); });
-      hp.addEventListener(evt, () => { syncBar(hp, $('hpFill'), $('hpLabel')); saveStatus(); });
-      state.addEventListener(evt, saveStatus);
+      if (energy) energy.addEventListener(evt, () => { syncBar(energy, $('energyFill'), $('energyLabel')); saveStatus(); });
+      if (hp) hp.addEventListener(evt, () => { syncBar(hp, $('hpFill'), $('hpLabel')); saveStatus(); });
+      if (state) state.addEventListener(evt, saveStatus);
     });
+
     loadStatus();
 
-    // DATA
+    // DATA (journal)
     const log = $('log');
-    function loadLog(){ log.value = store.get('log', ''); }
-    function saveLog(){ store.set('log', log.value); }
-    $('saveLog').addEventListener('click', saveLog);
-    $('clearLog').addEventListener('click', () => { log.value=''; saveLog(); });
+    function loadLog(){ if (log) log.value = store.get('log', ''); }
+    function saveLog(){ if (log) store.set('log', log.value); }
+
+    const btnSaveLog = $('saveLog');
+    const btnClearLog = $('clearLog');
+    if (btnSaveLog) btnSaveLog.addEventListener('click', saveLog);
+    if (btnClearLog) btnClearLog.addEventListener('click', () => { if (log) log.value=''; saveLog(); });
+
     loadLog();
 
-    // INV
+    // INV (inventaire)
     const itemsUl = $('items');
     function renderInv(){
       const arr = store.get('inv', []);
+      if (!itemsUl) return;
+
       itemsUl.innerHTML = '';
       arr.forEach((txt, idx) => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>${txt}</span><button class="mini" data-i="${idx}">X</button>`;
+        li.innerHTML = `<span>${txt}</span><button class="mini" data-i="${idx}" type="button">X</button>`;
         itemsUl.appendChild(li);
       });
+
       itemsUl.querySelectorAll('button.mini').forEach(b => {
         b.addEventListener('click', () => {
           const arr2 = store.get('inv', []);
@@ -175,63 +214,72 @@
         });
       });
     }
-    $('addItem').addEventListener('click', () => {
-      const val = $('itemInput').value.trim();
+
+    const btnAddItem = $('addItem');
+    if (btnAddItem) btnAddItem.addEventListener('click', () => {
+      const input = $('itemInput');
+      if (!input) return;
+      const val = input.value.trim();
       if(!val) return;
       const arr = store.get('inv', []);
       arr.unshift(val);
       store.set('inv', arr);
-      $('itemInput').value = '';
+      input.value = '';
       renderInv();
     });
-    $('clearInv').addEventListener('click', () => { store.set('inv', []); renderInv(); });
+
+    const btnClearInv = $('clearInv');
+    if (btnClearInv) btnClearInv.addEventListener('click', () => { store.set('inv', []); renderInv(); });
+
     renderInv();
-// --- EXPORT / IMPORT (tout)
-const backupBox = $('backupBox');
 
-function exportAll(){
-  const payload = {
-    v: 1,
-    exportedAt: new Date().toISOString(),
-    status: store.get('status', { energy: 70, hp: 85, state: 'OK' }),
-    log: store.get('log', ''),
-    inv: store.get('inv', [])
-  };
-  backupBox.value = JSON.stringify(payload, null, 2);
-}
+    // EXPORT / IMPORT (tout) - SAFE
+    const backupBox = $('backupBox');
 
-function applyImport(){
-  let obj;
-  try {
-    obj = JSON.parse(backupBox.value);
-  } catch (e) {
-    alert("JSON invalide 😵‍💫");
-    return;
-  }
+    function exportAll(){
+      if (!backupBox) return;
+      const payload = {
+        v: 1,
+        exportedAt: new Date().toISOString(),
+        status: store.get('status', { energy: 70, hp: 85, state: 'OK' }),
+        log: store.get('log', ''),
+        inv: store.get('inv', [])
+      };
+      backupBox.value = JSON.stringify(payload, null, 2);
+    }
 
-  // petite validation
-  if (!obj || typeof obj !== 'object') { alert("JSON invalide"); return; }
+    function applyImport(){
+      if (!backupBox) return;
+      let obj;
+      try {
+        obj = JSON.parse(backupBox.value);
+      } catch (e) {
+        alert("JSON invalide 😵‍💫");
+        return;
+      }
+      if (!obj || typeof obj !== 'object') { alert("JSON invalide"); return; }
 
-  // on accepte v1 ou sans v
-  if (obj.status) store.set('status', obj.status);
-  if (typeof obj.log === 'string') store.set('log', obj.log);
-  if (Array.isArray(obj.inv)) store.set('inv', obj.inv);
+      if (obj.status) store.set('status', obj.status);
+      if (typeof obj.log === 'string') store.set('log', obj.log);
+      if (Array.isArray(obj.inv)) store.set('inv', obj.inv);
 
-  // recharge UI
-  loadStatus();
-  loadLog();
-  renderInv();
+      loadStatus();
+      loadLog();
+      renderInv();
 
-  alert("Import appliqué ✅");
-}
+      alert("Import appliqué ✅");
+    }
 
-$('exportAll').addEventListener('click', exportAll);
-$('importAll').addEventListener('click', () => {
-  // juste un “focus” pratique: tu colles ton JSON ici
-  backupBox.focus();
-});
-$('clearBox').addEventListener('click', () => { backupBox.value = ""; });
-$('applyImport').addEventListener('click', applyImport);
+    const btnExport = $('exportAll');
+    const btnImport = $('importAll');
+    const btnClear  = $('clearBox');
+    const btnApply  = $('applyImport');
+
+    if (btnExport) btnExport.addEventListener('click', exportAll);
+    if (btnImport) btnImport.addEventListener('click', () => { if (backupBox) backupBox.focus(); });
+    if (btnClear && backupBox) btnClear.addEventListener('click', () => { backupBox.value = ""; });
+    if (btnApply) btnApply.addEventListener('click', applyImport);
+
     // PWA offline
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js');
