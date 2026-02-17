@@ -21,8 +21,10 @@ body{
   position:sticky; top:0; backdrop-filter: blur(10px);
 }
 .bottombar{
-  position:fixed; bottom:0; left:0; right:0;
-  border-top:1px solid rgba(31,227,138,.25); border-bottom:none;
+  position: static;
+  border-top:1px solid rgba(31,227,138,.25);
+  border-bottom:none;
+  margin-top: 12px;
 }
 .brand{ letter-spacing:1px; }
 .clock{ color:var(--muted); }
