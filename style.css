@@ -198,3 +198,22 @@ textarea#backupBox{
 }
 .filebtn input{ display:none; }
 .sep{ border:0; border-top:1px solid rgba(31,227,138,.22); margin:12px 0; }
+.nameSvg{
+  width:100%;
+  height:auto;
+  border:1px solid rgba(31,227,138,.22);
+  border-radius:16px;
+  background: rgba(7,18,12,.55);
+  padding:10px;
+}
+
+.nameSvg text{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 72px;
+  letter-spacing: 6px;
+  fill: var(--text);
+}
+
+.nameSvg{
+  filter: drop-shadow(0 0 10px rgba(31,227,138,.18));
+}
