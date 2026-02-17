@@ -80,7 +80,7 @@
           <button id="exportAll" type="button">Exporter JSON</button>
 
           <label class="filebtn">
-           Importer fichier
+            Importer fichier
             <input id="fileImport" type="file" accept="application/json,.json">
           </label>
         </div>
@@ -237,11 +237,12 @@
 
     renderInv();
 
-    // EXPORT / IMPORT (tout) - SAFE
+    // EXPORT / IMPORT (tout) - SAFE + téléchargement fichier
     const backupBox = $('backupBox');
 
     function exportAll(){
       if (!backupBox) return;
+
       const payload = {
         v: 1,
         exportedAt: new Date().toISOString(),
@@ -249,18 +250,25 @@
         log: store.get('log', ''),
         inv: store.get('inv', [])
       };
+
       backupBox.value = JSON.stringify(payload, null, 2);
+
+      // Téléchargement fichier .json (pratique sur mobile)
+      try {
+        const blob = new Blob([backupBox.value], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `pipboy-backup-${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        // si le téléchargement est bloqué, le JSON reste dans la zone de texte
+      }
     }
-    // Téléchargement fichier
-const blob = new Blob([backupBox.value], { type: "application/json" });
-const url = URL.createObjectURL(blob);
-const a = document.createElement("a");
-a.href = url;
-a.download = `pipboy-backup-${new Date().toISOString().slice(0,10)}.json`;
-document.body.appendChild(a);
-a.click();
-a.remove();
-URL.revokeObjectURL(url);
+
     function applyImport(){
       if (!backupBox) return;
       let obj;
@@ -284,31 +292,31 @@ URL.revokeObjectURL(url);
     }
 
     const btnExport = $('exportAll');
-    const btnImport = $('importAll');
     const btnClear  = $('clearBox');
     const btnApply  = $('applyImport');
 
     if (btnExport) btnExport.addEventListener('click', exportAll);
-    if (btnImport) btnImport.addEventListener('click', () => { if (backupBox) backupBox.focus(); });
     if (btnClear && backupBox) btnClear.addEventListener('click', () => { backupBox.value = ""; });
     if (btnApply) btnApply.addEventListener('click', applyImport);
-// Import via fichier .json
-   const fileImport = $('fileImport');
-   if (fileImport) {
-    fileImport.addEventListener('change', async () => {
-    const file = fileImport.files && fileImport.files[0];
-    if (!file) return;
-    try {
-      const text = await file.text();
-      if (backupBox) backupBox.value = text;
-      applyImport();
-     } catch (e) {
-      alert("Impossible de lire le fichier 😵‍💫");
-     } finally {
-      fileImport.value = "";
-      }
-    });
-}
+
+    // Import via fichier .json
+    const fileImport = $('fileImport');
+    if (fileImport) {
+      fileImport.addEventListener('change', async () => {
+        const file = fileImport.files && fileImport.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          if (backupBox) backupBox.value = text;
+          applyImport();
+        } catch (e) {
+          alert("Impossible de lire le fichier 😵‍💫");
+        } finally {
+          fileImport.value = "";
+        }
+      });
+    }
+
     // PWA offline
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js');
