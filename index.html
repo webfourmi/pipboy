@@ -28,13 +28,20 @@
 
       <div class="grid">
         <div class="card">
-          <h2>Énergie</h2>
-          <div class="bar"><div class="barfill" id="energyFill" style="width:70%"></div></div>
-          <div class="row">
-            <input id="energy" type="range" min="0" max="100" value="70">
-            <span id="energyLabel">70%</span>
-          </div>
-        </div>
+  <h2>Sauvegarde</h2>
+  <p class="hint">Exporter/Importer toutes les données (STATUS + JOURNAL + INV).</p>
+
+  <div class="row">
+    <button id="exportAll">Exporter JSON</button>
+    <button id="importAll">Importer JSON</button>
+  </div>
+
+  <textarea id="backupBox" rows="8" placeholder="Ton JSON apparaîtra ici (ou colle un JSON à importer)…"></textarea>
+
+  <div class="row right">
+    <button id="clearBox" class="danger">Vider</button>
+    <button id="applyImport">Appliquer l’import</button>
+  </div
 
         <div class="card">
           <h2>PV</h2>
