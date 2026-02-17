@@ -26,6 +26,7 @@ body{
   border-bottom:none;
   margin-top: 12px;
 }
+.topbar{ position: static; }
 .brand{ letter-spacing:1px; }
 .clock{ color:var(--muted); }
 .shell{ padding: 12px 12px 70px; max-width: 900px; margin: 0 auto; }
