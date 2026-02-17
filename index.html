@@ -87,6 +87,7 @@
         </div>
       </div>
 
+      <!-- Sauvegarde globale -->
       <div class="card">
         <h2>Sauvegarde</h2>
         <p class="hint">Exporter/Importer tous les profils (et le profil actif).</p>
@@ -105,6 +106,28 @@
         <div class="row right">
           <button id="clearBox" class="danger" type="button">Vider</button>
           <button id="applyImport" type="button">Appliquer l’import</button>
+        </div>
+
+        <hr class="sep">
+
+        <!-- Profil actif -->
+        <h2>Profil actif</h2>
+        <p class="hint">Exporter/importer uniquement le profil sélectionné.</p>
+
+        <div class="row">
+          <button id="exportActive" type="button">Exporter ce profil</button>
+
+          <label class="filebtn">
+            Importer dans ce profil
+            <input id="fileImportActive" type="file" accept="application/json,.json">
+          </label>
+        </div>
+
+        <textarea id="backupProfileBox" rows="8" placeholder="JSON du profil actif (export ou collage)…"></textarea>
+
+        <div class="row right">
+          <button id="clearProfileBox" class="danger" type="button">Vider</button>
+          <button id="applyImportActive" type="button">Appliquer sur ce profil</button>
         </div>
       </div>
     </section>
@@ -166,7 +189,6 @@
     };
 
     // --- MULTI-PROFILS ---
-    // Structure:
     // pipboy_profiles = [{id,name,createdAt}, ...]
     // pipboy_active_profile = "id"
     // pipboy_profile_<id> = {status, log, inv}
@@ -185,32 +207,16 @@
       };
     }
 
-    function getProfiles(){
-      return store.get(PROFILES_KEY, []);
-    }
-    function setProfiles(arr){
-      store.set(PROFILES_KEY, arr);
-    }
-    function getActiveId(){
-      return store.get(ACTIVE_KEY, null);
-    }
-    function setActiveId(id){
-      store.set(ACTIVE_KEY, id);
-    }
-    function profileKey(id){
-      return `pipboy_profile_${id}`;
-    }
-    function getProfileData(id){
-      return store.get(profileKey(id), defaultProfileData());
-    }
-    function setProfileData(id, data){
-      store.set(profileKey(id), data);
-    }
-    function deleteProfileData(id){
-      store.del(profileKey(id));
-    }
+    function getProfiles(){ return store.get(PROFILES_KEY, []); }
+    function setProfiles(arr){ store.set(PROFILES_KEY, arr); }
+    function getActiveId(){ return store.get(ACTIVE_KEY, null); }
+    function setActiveId(id){ store.set(ACTIVE_KEY, id); }
+    function profileKey(id){ return `pipboy_profile_${id}`; }
+    function getProfileData(id){ return store.get(profileKey(id), defaultProfileData()); }
+    function setProfileData(id, data){ store.set(profileKey(id), data); }
+    function deleteProfileData(id){ store.del(profileKey(id)); }
 
-    // Migration: si l'ancien format existe (status/log/inv), on le copie dans un profil "P1"
+    // Migration depuis ancien format (status/log/inv) -> profil P1
     function migrateIfNeeded(){
       const profiles = getProfiles();
       if (profiles.length > 0) return;
@@ -221,19 +227,15 @@
 
       const id = uid();
       const name = "P1";
-      const meta = [{ id, name, createdAt: new Date().toISOString() }];
-      setProfiles(meta);
+      setProfiles([{ id, name, createdAt: new Date().toISOString() }]);
       setActiveId(id);
 
       const data = defaultProfileData();
       if (oldStatus) data.status = oldStatus;
       if (typeof oldLog === "string") data.log = oldLog;
       if (Array.isArray(oldInv)) data.inv = oldInv;
-
       setProfileData(id, data);
-      // (optionnel) on laisse l'ancien stockage en place, ça ne gêne pas
     }
-
     migrateIfNeeded();
 
     // UI profils
@@ -492,7 +494,7 @@
 
       if (!obj || typeof obj !== "object") { alert("JSON invalide"); return; }
 
-      // v2 recommandé
+      // v2
       if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object") {
         setProfiles(obj.profiles);
         Object.keys(obj.dataByProfile).forEach(id => {
@@ -504,7 +506,7 @@
         return;
       }
 
-      // fallback: ancien export v1 (status/log/inv)
+      // fallback v1 (status/log/inv) -> profil actif
       if (obj.status || obj.log || obj.inv) {
         const id = ensureActiveProfile();
         const data = getProfileData(id);
@@ -541,6 +543,91 @@
           alert("Impossible de lire le fichier 😵‍💫");
         } finally {
           fileImport.value = "";
+        }
+      });
+    }
+
+    // --- EXPORT / IMPORT : PROFIL ACTIF ---
+    const backupProfileBox = $("backupProfileBox");
+
+    function exportActiveProfile(){
+      const id = ensureActiveProfile();
+      if (!id || !backupProfileBox) return;
+
+      const profiles = getProfiles();
+      const meta = profiles.find(p => p.id === id) || { id, name: "Profil", createdAt: "" };
+
+      const payload = {
+        v: 1,
+        exportedAt: new Date().toISOString(),
+        profile: meta,
+        data: getProfileData(id)
+      };
+
+      backupProfileBox.value = JSON.stringify(payload, null, 2);
+
+      try {
+        const safeName = (meta.name || "profil").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+        const blob = new Blob([backupProfileBox.value], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `pipboy-${safeName || "profil"}-${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (e) {}
+    }
+
+    function applyImportActiveProfile(){
+      const id = ensureActiveProfile();
+      if (!id || !backupProfileBox) return;
+
+      let obj;
+      try { obj = JSON.parse(backupProfileBox.value); }
+      catch { alert("JSON invalide 😵‍💫"); return; }
+
+      let data = null;
+
+      if (obj && typeof obj === "object" && obj.data && typeof obj.data === "object") {
+        data = obj.data;
+      } else if (obj && typeof obj === "object" && (obj.status || obj.log || obj.inv)) {
+        data = {
+          status: obj.status || { energy: 70, hp: 85, state: "OK" },
+          log: (typeof obj.log === "string") ? obj.log : "",
+          inv: Array.isArray(obj.inv) ? obj.inv : []
+        };
+      }
+
+      if (!data) { alert("Format non reconnu 😵‍💫"); return; }
+
+      setProfileData(id, data);
+      loadActiveProfileToUI();
+      alert("Profil actif mis à jour ✅");
+    }
+
+    const btnExportActive = $("exportActive");
+    const btnApplyActive  = $("applyImportActive");
+    const btnClearActive  = $("clearProfileBox");
+
+    if (btnExportActive) btnExportActive.addEventListener("click", exportActiveProfile);
+    if (btnApplyActive) btnApplyActive.addEventListener("click", applyImportActiveProfile);
+    if (btnClearActive && backupProfileBox) btnClearActive.addEventListener("click", () => { backupProfileBox.value = ""; });
+
+    const fileImportActive = $("fileImportActive");
+    if (fileImportActive) {
+      fileImportActive.addEventListener("change", async () => {
+        const file = fileImportActive.files && fileImportActive.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          if (backupProfileBox) backupProfileBox.value = text;
+          applyImportActiveProfile();
+        } catch {
+          alert("Impossible de lire le fichier 😵‍💫");
+        } finally {
+          fileImportActive.value = "";
         }
       });
     }
