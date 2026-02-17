@@ -186,7 +186,52 @@
     });
     $('clearInv').addEventListener('click', () => { store.set('inv', []); renderInv(); });
     renderInv();
+// --- EXPORT / IMPORT (tout)
+const backupBox = $('backupBox');
 
+function exportAll(){
+  const payload = {
+    v: 1,
+    exportedAt: new Date().toISOString(),
+    status: store.get('status', { energy: 70, hp: 85, state: 'OK' }),
+    log: store.get('log', ''),
+    inv: store.get('inv', [])
+  };
+  backupBox.value = JSON.stringify(payload, null, 2);
+}
+
+function applyImport(){
+  let obj;
+  try {
+    obj = JSON.parse(backupBox.value);
+  } catch (e) {
+    alert("JSON invalide 😵‍💫");
+    return;
+  }
+
+  // petite validation
+  if (!obj || typeof obj !== 'object') { alert("JSON invalide"); return; }
+
+  // on accepte v1 ou sans v
+  if (obj.status) store.set('status', obj.status);
+  if (typeof obj.log === 'string') store.set('log', obj.log);
+  if (Array.isArray(obj.inv)) store.set('inv', obj.inv);
+
+  // recharge UI
+  loadStatus();
+  loadLog();
+  renderInv();
+
+  alert("Import appliqué ✅");
+}
+
+$('exportAll').addEventListener('click', exportAll);
+$('importAll').addEventListener('click', () => {
+  // juste un “focus” pratique: tu colles ton JSON ici
+  backupBox.focus();
+});
+$('clearBox').addEventListener('click', () => { backupBox.value = ""; });
+$('applyImport').addEventListener('click', applyImport);
     // PWA offline
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js');
