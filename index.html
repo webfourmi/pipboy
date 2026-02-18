@@ -41,14 +41,14 @@
         </div>
         <p class="hint">Chaque profil a ses propres PV/Énergie/Journal/Inventaire.</p>
       </div>
+
+      <!-- NOM EN SVG -->
       <div class="card">
-       <h2>Identité</h2>
-
-        <svg class="nameSvg" viewBox="0 0 800 120" role="img" aria-label="Nom du profil">
-         <text id="profileNameSvg" x="18" y="82">P1</text>
+        <h2>Identité</h2>
+        <svg class="nameSvg" viewBox="0 0 800 120" role="img" aria-label="Nom du profil actif">
+          <text id="profileNameSvg" x="18" y="82">P1</text>
         </svg>
-
-        <p class="hint">Affichage en SVG (super net).</p>
+        <p class="hint">Affichage SVG (net à toutes tailles).</p>
       </div>
 
       <div class="grid">
@@ -96,7 +96,7 @@
         </div>
       </div>
 
-      <!-- Sauvegarde globale -->
+      <!-- Sauvegarde globale + profil actif -->
       <div class="card">
         <h2>Sauvegarde</h2>
         <p class="hint">Exporter/Importer tous les profils (et le profil actif).</p>
@@ -119,7 +119,6 @@
 
         <hr class="sep">
 
-        <!-- Profil actif -->
         <h2>Profil actif</h2>
         <p class="hint">Exporter/importer uniquement le profil sélectionné.</p>
 
@@ -198,9 +197,6 @@
     };
 
     // --- MULTI-PROFILS ---
-    // pipboy_profiles = [{id,name,createdAt}, ...]
-    // pipboy_active_profile = "id"
-    // pipboy_profile_<id> = {status, log, inv}
     const PROFILES_KEY = "pipboy_profiles";
     const ACTIVE_KEY = "pipboy_active_profile";
 
@@ -251,6 +247,7 @@
     const profileSelect = $("profileSelect");
     const profileName = $("profileName");
     const activeHint = $("activeProfileHint");
+    const svgName = $("profileNameSvg");
 
     function refreshProfilesUI(){
       const profiles = getProfiles();
@@ -271,6 +268,7 @@
       if (activeMeta){
         if (profileName) profileName.value = activeMeta.name;
         if (activeHint) activeHint.textContent = `PROFIL: ${activeMeta.name} • LOCAL SAVE`;
+        if (svgName) svgName.textContent = activeMeta.name;
       }
     }
 
@@ -440,7 +438,7 @@
       const p = profiles.find(x => x.id === id);
       if (p) p.name = newName;
       setProfiles(profiles);
-      refreshProfilesUI();
+      refreshProfilesUI(); // met à jour footer + SVG
     });
 
     const btnDeleteProfile = $("deleteProfile");
@@ -481,7 +479,6 @@
 
       if (backupBox) backupBox.value = JSON.stringify(payload, null, 2);
 
-      // Téléchargement .json
       try {
         const blob = new Blob([backupBox.value], { type: "application/json" });
         const url = URL.createObjectURL(blob);
@@ -503,7 +500,6 @@
 
       if (!obj || typeof obj !== "object") { alert("JSON invalide"); return; }
 
-      // v2
       if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object") {
         setProfiles(obj.profiles);
         Object.keys(obj.dataByProfile).forEach(id => {
@@ -515,7 +511,6 @@
         return;
       }
 
-      // fallback v1 (status/log/inv) -> profil actif
       if (obj.status || obj.log || obj.inv) {
         const id = ensureActiveProfile();
         const data = getProfileData(id);
