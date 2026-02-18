@@ -18,7 +18,7 @@ body{
   color:var(--text);
 }
 
-/* BARRE DU HAUT (non sticky pour éviter bugs viewport mobiles) */
+/* BARRE DU HAUT */
 .topbar{
   display:flex;
   justify-content:space-between;
@@ -177,15 +177,18 @@ button.mini{
   border-radius: 14px;
 }
 
-/* Sauvegarde: zone JSON un peu plus “console” */
-textarea#backupBox{
+/* Sauvegarde: zone JSON console */
+textarea#backupBox,
+textarea#backupProfileBox{
   margin-top: 10px;
   min-height: 180px;
   font-size: 12px;
   line-height: 1.35;
   white-space: pre;
 }
-..filebtn{
+
+/* Bouton import fichier */
+.filebtn{
   display:inline-flex;
   align-items:center;
   justify-content:center;
@@ -195,9 +198,18 @@ textarea#backupBox{
   background: rgba(31,227,138,.12);
   color: var(--text);
   cursor: pointer;
+  user-select: none;
 }
 .filebtn input{ display:none; }
-.sep{ border:0; border-top:1px solid rgba(31,227,138,.22); margin:12px 0; }
+
+/* Séparateur */
+.sep{
+  border:0;
+  border-top:1px solid rgba(31,227,138,.22);
+  margin:12px 0;
+}
+
+/* NOM EN SVG */
 .nameSvg{
   width:100%;
   height:auto;
@@ -205,6 +217,7 @@ textarea#backupBox{
   border-radius:16px;
   background: rgba(7,18,12,.55);
   padding:10px;
+  filter: drop-shadow(0 0 10px rgba(31,227,138,.18));
 }
 
 .nameSvg text{
@@ -212,8 +225,4 @@ textarea#backupBox{
   font-size: 72px;
   letter-spacing: 6px;
   fill: var(--text);
-}
-
-.nameSvg{
-  filter: drop-shadow(0 0 10px rgba(31,227,138,.18));
 }
