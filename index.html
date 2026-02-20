@@ -46,9 +46,10 @@
       <div class="card">
         <h2>Identité</h2>
         <svg class="nameSvg" viewBox="0 0 800 120" role="img" aria-label="Nom du profil actif">
+          <!-- styles inline "béton" pour éviter soucis CSS -->
           <text id="profileNameSvg" x="18" y="82" fill="#b7ffd9" font-size="72" letter-spacing="6">P1</text>
         </svg>
-        <p class="hint">Affichage SVG (net à toutes tailles).</p>
+        <p class="hint">Affichage SVG (net à toutes tailles) + auto-fit si nom long.</p>
       </div>
 
       <div class="grid">
@@ -196,6 +197,29 @@
       del(k){ localStorage.removeItem(k); }
     };
 
+    // --- Auto-fit SVG (nom long) ---
+    function fitSvgText(textEl, maxWidth = 760, maxSize = 72, minSize = 28){
+      if (!textEl) return;
+
+      let size = maxSize;
+      textEl.setAttribute("font-size", String(size));
+
+      const getW = () => {
+        try { return textEl.getComputedTextLength(); }
+        catch { return 0; }
+      };
+
+      let w = getW();
+      let guard = 0;
+
+      while (w > maxWidth && size > minSize && guard < 80){
+        size -= 2;
+        textEl.setAttribute("font-size", String(size));
+        w = getW();
+        guard++;
+      }
+    }
+
     // --- MULTI-PROFILS ---
     const PROFILES_KEY = "pipboy_profiles";
     const ACTIVE_KEY = "pipboy_active_profile";
@@ -268,7 +292,11 @@
       if (activeMeta){
         if (profileName) profileName.value = activeMeta.name;
         if (activeHint) activeHint.textContent = `PROFIL: ${activeMeta.name} • LOCAL SAVE`;
-        if (svgName) svgName.textContent = activeMeta.name;
+        if (svgName) {
+          svgName.textContent = activeMeta.name;
+          svgName.setAttribute("fill", "#b7ffd9");
+          fitSvgText(svgName); // <-- auto-fit
+        }
       }
     }
 
@@ -438,7 +466,7 @@
       const p = profiles.find(x => x.id === id);
       if (p) p.name = newName;
       setProfiles(profiles);
-      refreshProfilesUI(); // met à jour footer + SVG
+      refreshProfilesUI();
     });
 
     const btnDeleteProfile = $("deleteProfile");
