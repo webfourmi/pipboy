@@ -114,12 +114,12 @@
           </select>
           <button id="clearDoneObjectives" type="button">Nettoyer objectifs OK</button>
         </div>
-        <div id="questCounts" class="tiny"></div>
 
+        <div id="questCounts" class="tiny"></div>
         <div id="quests" class="questList"></div>
       </div>
 
-      <!-- Sauvegarde -->
+      <!-- SAUVEGARDE -->
       <div class="card">
         <h2>Sauvegarde</h2>
         <p class="hint">Exporter/Importer tous les profils (et le profil actif).</p>
@@ -186,6 +186,7 @@
   </main>
 
   <script>
+    // Horloge
     function tick(){
       const d = new Date();
       const hh = String(d.getHours()).padStart(2,'0');
@@ -195,6 +196,7 @@
     }
     tick(); setInterval(tick, 1000);
 
+    // Navigation onglets
     document.querySelectorAll('.tab').forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.dataset.view;
@@ -207,6 +209,7 @@
       });
     });
 
+    // Helpers
     const $ = (id) => document.getElementById(id);
     const store = {
       get(k, fallback){ try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } },
@@ -214,6 +217,16 @@
       del(k){ localStorage.removeItem(k); }
     };
 
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    // Auto-fit SVG (nom long)
     function fitSvgText(textEl, maxWidth = 760, maxSize = 72, minSize = 28){
       if (!textEl) return;
       let size = maxSize;
@@ -229,6 +242,7 @@
       }
     }
 
+    // MULTI-PROFILS
     const PROFILES_KEY = "pipboy_profiles";
     const ACTIVE_KEY = "pipboy_active_profile";
 
@@ -263,6 +277,7 @@
     function setProfileData(id, data){ store.set(profileKey(id), normalizeProfileData(data)); }
     function deleteProfileData(id){ store.del(profileKey(id)); }
 
+    // Migration ancien format -> profil P1
     function migrateIfNeeded(){
       const profiles = getProfiles();
       if (profiles.length > 0) return;
@@ -284,6 +299,7 @@
     }
     migrateIfNeeded();
 
+    // UI profils
     const profileSelect = $("profileSelect");
     const profileName = $("profileName");
     const activeHint = $("activeProfileHint");
@@ -326,6 +342,13 @@
       return activeId;
     }
 
+    function syncBar(rangeEl, fillEl, labelEl){
+      if (!rangeEl || !fillEl || !labelEl) return;
+      const val = Number(rangeEl.value);
+      fillEl.style.width = `${val}%`;
+      labelEl.textContent = `${val}%`;
+    }
+
     function loadActiveProfileToUI(){
       const id = ensureActiveProfile();
       if (!id) return;
@@ -335,6 +358,7 @@
       if ($("energy")) $("energy").value = data.status.energy ?? 70;
       if ($("hp")) $("hp").value = data.status.hp ?? 85;
       if ($("state")) $("state").value = data.status.state ?? "OK";
+
       syncBar($("energy"), $("energyFill"), $("energyLabel"));
       syncBar($("hp"), $("hpFill"), $("hpLabel"));
 
@@ -368,13 +392,6 @@
       setProfileData(id, updated);
     }
 
-    function syncBar(rangeEl, fillEl, labelEl){
-      if (!rangeEl || !fillEl || !labelEl) return;
-      const val = Number(rangeEl.value);
-      fillEl.style.width = `${val}%`;
-      labelEl.textContent = `${val}%`;
-    }
-
     ["input","change"].forEach(evt => {
       const e = $("energy");
       const h = $("hp");
@@ -384,11 +401,13 @@
       if (s) s.addEventListener(evt, () => { saveActiveProfileFromUI(); });
     });
 
+    // Journal
     const btnSaveLog = $("saveLog");
     const btnClearLog = $("clearLog");
     if (btnSaveLog) btnSaveLog.addEventListener("click", () => saveActiveProfileFromUI());
     if (btnClearLog) btnClearLog.addEventListener("click", () => { if ($("log")) $("log").value = ""; saveActiveProfileFromUI(); });
 
+    // INVENTAIRE
     function renderInv(){
       const id = ensureActiveProfile();
       const data = id ? getProfileData(id) : defaultProfileData();
@@ -448,6 +467,7 @@
       renderInv();
     });
 
+    // QUÊTES
     const questTitle = $("questTitle");
     const addQuestBtn = $("addQuest");
     const questFilter = $("questFilter");
@@ -479,19 +499,19 @@
 
       const mode = questFilter ? questFilter.value : "BOARD";
       const quests = getQuestData();
+
       const cEn = quests.filter(q => q.status === "EN_COURS").length;
       const cOk = quests.filter(q => q.status === "OK").length;
       const cRa = quests.filter(q => q.status === "RATEE").length;
       if (questCounts) questCounts.textContent = `EN COURS (${cEn}) • OK (${cOk}) • RATÉE (${cRa})`;
-       const statusLabel = { EN_COURS: "EN COURS", OK: "OK", RATEE: "RATÉE" };
-       const order = { EN_COURS: 0, OK: 1, RATEE: 2 };
+
+      const statusLabel = { EN_COURS: "EN COURS", OK: "OK", RATEE: "RATÉE" };
+      const order = { EN_COURS: 0, OK: 1, RATEE: 2 };
 
       let shown = quests.slice();
-
       if (mode === "BOARD"){
         shown.sort((a,b) => (order[a.status] ?? 9) - (order[b.status] ?? 9));
       } else if (mode === "ALL"){
-        // ordre actuel
       } else {
         shown = shown.filter(q => q.status === mode);
       }
@@ -549,15 +569,6 @@
       }
 
       questsBox.innerHTML = html;
-    }
-
-    function escapeHtml(s){
-      return String(s ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
     }
 
     if (addQuestBtn) addQuestBtn.addEventListener("click", () => {
@@ -662,6 +673,7 @@
       }, true);
     }
 
+    // PROFILS: changer / créer / renommer / supprimer
     if (profileSelect) profileSelect.addEventListener("change", () => {
       setActiveId(profileSelect.value);
       loadActiveProfileToUI();
@@ -713,12 +725,24 @@
       loadActiveProfileToUI();
     });
 
+    // EXPORT / IMPORT (tous profils)
     const backupBox = $("backupBox");
 
     function exportAll(){
-      const payload = { v: 2, exportedAt: new Date().toISOString(), activeProfileId: getActiveId(), profiles: getProfiles(), dataByProfile: {} };
-      payload.profiles.forEach(p => { payload.dataByProfile[p.id] = getProfileData(p.id); });
+      const payload = {
+        v: 2,
+        exportedAt: new Date().toISOString(),
+        activeProfileId: getActiveId(),
+        profiles: getProfiles(),
+        dataByProfile: {}
+      };
+
+      payload.profiles.forEach(p => {
+        payload.dataByProfile[p.id] = getProfileData(p.id);
+      });
+
       if (backupBox) backupBox.value = JSON.stringify(payload, null, 2);
+
       try {
         const blob = new Blob([backupBox.value], { type: "application/json" });
         const url = URL.createObjectURL(blob);
@@ -737,23 +761,27 @@
       let obj;
       try { obj = JSON.parse(backupBox.value); }
       catch { alert("JSON invalide 😵‍💫"); return; }
+
       if (!obj || typeof obj !== "object") { alert("JSON invalide"); return; }
 
       if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object") {
         setProfiles(obj.profiles);
-        Object.keys(obj.dataByProfile).forEach(id => { setProfileData(id, obj.dataByProfile[id]); });
+        Object.keys(obj.dataByProfile).forEach(id => {
+          setProfileData(id, obj.dataByProfile[id]);
+        });
         if (obj.activeProfileId) setActiveId(obj.activeProfileId);
         loadActiveProfileToUI();
         alert("Import appliqué ✅");
         return;
       }
 
-      if (obj.status || obj.log || obj.inv) {
+      if (obj.status || obj.log || obj.inv || obj.quests) {
         const id = ensureActiveProfile();
         const data = getProfileData(id);
         if (obj.status) data.status = obj.status;
         if (typeof obj.log === "string") data.log = obj.log;
         if (Array.isArray(obj.inv)) data.inv = obj.inv;
+        if (Array.isArray(obj.quests)) data.quests = obj.quests;
         setProfileData(id, data);
         loadActiveProfileToUI();
         alert("Import appliqué sur le profil actif ✅");
@@ -766,6 +794,7 @@
     const btnExport = $("exportAll");
     const btnClear  = $("clearBox");
     const btnApply  = $("applyImport");
+
     if (btnExport) btnExport.addEventListener("click", exportAll);
     if (btnClear && backupBox) btnClear.addEventListener("click", () => { backupBox.value = ""; });
     if (btnApply) btnApply.addEventListener("click", applyImport);
@@ -787,6 +816,7 @@
       });
     }
 
+    // EXPORT / IMPORT : PROFIL ACTIF
     const backupProfileBox = $("backupProfileBox");
 
     function exportActiveProfile(){
@@ -796,7 +826,13 @@
       const profiles = getProfiles();
       const meta = profiles.find(p => p.id === id) || { id, name: "Profil", createdAt: "" };
 
-      const payload = { v: 1, exportedAt: new Date().toISOString(), profile: meta, data: getProfileData(id) };
+      const payload = {
+        v: 1,
+        exportedAt: new Date().toISOString(),
+        profile: meta,
+        data: getProfileData(id)
+      };
+
       backupProfileBox.value = JSON.stringify(payload, null, 2);
 
       try {
@@ -825,8 +861,13 @@
 
       if (obj && typeof obj === "object" && obj.data && typeof obj.data === "object") {
         data = obj.data;
-      } else if (obj && typeof obj === "object" && (obj.status || obj.log || obj.inv)) {
-        data = { status: obj.status || { energy: 70, hp: 85, state: "OK" }, log: (typeof obj.log === "string") ? obj.log : "", inv: Array.isArray(obj.inv) ? obj.inv : [], quests: [] };
+      } else if (obj && typeof obj === "object" && (obj.status || obj.log || obj.inv || obj.quests)) {
+        data = {
+          status: obj.status || { energy: 70, hp: 85, state: "OK" },
+          log: (typeof obj.log === "string") ? obj.log : "",
+          inv: Array.isArray(obj.inv) ? obj.inv : [],
+          quests: Array.isArray(obj.quests) ? obj.quests : []
+        };
       }
 
       if (!data) { alert("Format non reconnu 😵‍💫"); return; }
@@ -839,6 +880,7 @@
     const btnExportActive = $("exportActive");
     const btnApplyActive  = $("applyImportActive");
     const btnClearActive  = $("clearProfileBox");
+
     if (btnExportActive) btnExportActive.addEventListener("click", exportActiveProfile);
     if (btnApplyActive) btnApplyActive.addEventListener("click", applyImportActiveProfile);
     if (btnClearActive && backupProfileBox) btnClearActive.addEventListener("click", () => { backupProfileBox.value = ""; });
@@ -860,9 +902,11 @@
       });
     }
 
+    // Chargement initial
     refreshProfilesUI();
     loadActiveProfileToUI();
 
+    // PWA offline
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("./sw.js");
     }
