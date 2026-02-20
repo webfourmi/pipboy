@@ -1,7 +1,7 @@
 {
   "name": "Pip-Boy Spatial",
   "short_name": "Pip-Boy",
-  "start_url": "./index.html",
+  "start_url": "./?v=16&source=pwa",
   "display": "standalone",
   "background_color": "#07120c",
   "theme_color": "#0b1a12"
