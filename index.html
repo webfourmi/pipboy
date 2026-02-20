@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0b1a12" />
-  <title>Pip-Boy Spatial v17</title>
+  <title>Pip-Boy Spatial v18</title>
 
   <link rel="manifest" href="manifest.json?v=18">
   <link rel="stylesheet" href="style.css" />
@@ -37,9 +37,13 @@
         </div>
         <div class="row">
           <input id="profileName" type="text" placeholder="Nom du profil">
-          <button id="saveProfileName" type="button">Renommer</button>
+          <input id="profileCampaign" type="text" placeholder="Campagne (ex: ORION)">
+        </div>
+        <div class="row">
+          <button id="saveProfileName" type="button">Sauver</button>
           <button id="deleteProfile" class="danger" type="button">Supprimer</button>
         </div>
+        <p class="hint">Astuce: même “Campagne” = même Pack MJ appliqué en masse.</p>
         <p class="hint">Chaque profil a ses propres PV/Énergie/Quêtes/Journal/Inventaire.</p>
       </div>
 
@@ -214,7 +218,7 @@
   </main>
 
   <script>
-    const APP_VERSION = "v18";
+    const APP_VERSION = "v19";
 
     // Horloge
     function tick(){
