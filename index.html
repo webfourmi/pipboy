@@ -106,15 +106,16 @@
           <button id="addQuest" type="button">Ajouter</button>
         </div>
 
-        <div class="row">
-          <select id="questFilter">
-            <option value="ALL">Filtre: Toutes</option>
-            <option value="EN_COURS">EN COURS</option>
-            <option value="OK">OK</option>
-            <option value="RATEE">RATÉE</option>
-          </select>
-          <button id="clearDoneObjectives" type="button">Nettoyer objectifs OK</button>
-        </div>
+       <div class="row">
+        <select id="questFilter">
+         <option value="BOARD">Vue: Tableau (EN COURS en haut)</option>
+         <option value="ALL">Filtre: Toutes (ordre actuel)</option>
+         <option value="EN_COURS">EN COURS</option>
+         <option value="OK">OK</option>
+         <option value="RATEE">RATÉE</option>
+        </select>
+       <button id="clearDoneObjectives" type="button">Nettoyer objectifs OK</button>
+      </div>
 
         <div id="quests" class="questList"></div>
       </div>
