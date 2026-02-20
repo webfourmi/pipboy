@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0b1a12" />
-  <title>Pip-Boy Spatial v16</title>
+  <title>Pip-Boy Spatial v17</title>
 
-  <link rel="manifest" href="manifest.json?v=16">
+  <link rel="manifest" href="manifest.json?v=17">
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="icons/favicon.ico">
-  <link rel="apple-touch-icon" href="icons/icon-180.png"> 
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
 </head>
 
 <body>
@@ -147,7 +147,7 @@
         <hr class="sep">
 
         <h2>Profil actif</h2>
-        <p class="hint">Exporter/importer uniquement le profil sélectionné.</p>
+        <p class="hint">Exporter/importer uniquement le profil sélectionné. + Pack MJ (fusion missions).</p>
 
         <div class="row">
           <button id="exportActive" type="button">Exporter ce profil</button>
@@ -162,6 +162,26 @@
         <div class="row right">
           <button id="clearProfileBox" class="danger" type="button">Vider</button>
           <button id="applyImportActive" type="button">Appliquer sur ce profil</button>
+        </div>
+
+        <hr class="sep">
+
+        <h2>Pack MJ (profil actif)</h2>
+        <p class="hint">À partager aux joueurs: missions + briefing. Import = fusion intelligente (garde les coches/notes si possible).</p>
+
+        <div class="row">
+          <button id="exportPackActive" type="button">Exporter Pack MJ</button>
+          <label class="filebtn">
+            Importer Pack MJ
+            <input id="fileImportPackActive" type="file" accept="application/json,.json">
+          </label>
+        </div>
+
+        <textarea id="packProfileBox" rows="8" placeholder="Pack MJ (export ou collage)…"></textarea>
+
+        <div class="row right">
+          <button id="clearPackProfileBox" class="danger" type="button">Vider</button>
+          <button id="applyPackActive" type="button">Appliquer Pack MJ</button>
         </div>
       </div>
     </section>
@@ -191,7 +211,7 @@
   </main>
 
   <script>
-    const APP_VERSION = "v16";
+    const APP_VERSION = "v17";
 
     // Horloge
     function tick(){
@@ -706,7 +726,7 @@
         await navigator.clipboard.writeText(diag);
         alert("Diagnostic copié ✅");
       } catch {
-        alert("Copie impossible (le navigateur bloque). Tu peux copier depuis la zone Sauvegarde à la place.");
+        alert("Copie impossible (le navigateur bloque).");
       }
     });
 
@@ -935,6 +955,173 @@
           alert("Impossible de lire le fichier 😵‍💫");
         } finally {
           fileImportActive.value = "";
+        }
+      });
+    }
+
+    // ===== PACK MJ (profil actif) =====
+    const packProfileBox = $("packProfileBox");
+    const btnExportPackActive = $("exportPackActive");
+    const btnApplyPackActive = $("applyPackActive");
+    const btnClearPackProfileBox = $("clearPackProfileBox");
+    const fileImportPackActive = $("fileImportPackActive");
+
+    function normalizeQuest(q){
+      const out = Object.assign({ id: uid(), title: "", status: "EN_COURS", notes: "", objectives: [], mj: {} }, q || {});
+      out.objectives = Array.isArray(out.objectives) ? out.objectives : [];
+      out.mj = (out.mj && typeof out.mj === "object") ? out.mj : {};
+      return out;
+    }
+
+    function mergeObjectives(existing, incoming){
+      const ex = Array.isArray(existing) ? existing : [];
+      const inc = Array.isArray(incoming) ? incoming : [];
+
+      const exById = new Map(ex.filter(o => o && o.id).map(o => [o.id, o]));
+      const merged = [];
+
+      for (const o of inc){
+        const obj = Object.assign({ id: uid(), text: "", done: false }, o || {});
+        const same = obj.id ? exById.get(obj.id) : null;
+        if (same){
+          merged.push({
+            id: obj.id,
+            text: (obj.text ?? same.text ?? ""),
+            done: !!same.done
+          });
+        } else {
+          merged.push({
+            id: obj.id,
+            text: obj.text ?? "",
+            done: !!obj.done
+          });
+        }
+      }
+
+      // Garde aussi les objectifs existants non mentionnés dans le pack (pas de perte)
+      const incIds = new Set(merged.map(x => x.id));
+      for (const o of ex){
+        if (o && o.id && !incIds.has(o.id)){
+          merged.push({ id: o.id, text: o.text ?? "", done: !!o.done });
+        }
+      }
+      return merged;
+    }
+
+    function mergeQuests(existingQuests, incomingQuests){
+      const ex = (Array.isArray(existingQuests) ? existingQuests : []).map(normalizeQuest);
+      const inc = (Array.isArray(incomingQuests) ? incomingQuests : []).map(normalizeQuest);
+
+      const exById = new Map(ex.filter(q => q.id).map(q => [q.id, q]));
+      const merged = [];
+
+      for (const q of inc){
+        const same = q.id ? exById.get(q.id) : null;
+        if (same){
+          merged.push({
+            id: q.id,
+            title: q.title || same.title,
+            status: same.status || q.status || "EN_COURS",
+            // on garde notes joueur si présentes
+            notes: (same.notes && String(same.notes).trim().length > 0) ? same.notes : (q.notes || ""),
+            // fusion objectives (garde done existant)
+            objectives: mergeObjectives(same.objectives, q.objectives),
+            mj: Object.assign({}, same.mj || {}, q.mj || {})
+          });
+        } else {
+          merged.push(q);
+        }
+      }
+
+      // Ajoute aussi les quêtes existantes non mentionnées dans le pack (pas de perte)
+      const incIds = new Set(merged.map(x => x.id));
+      for (const q of ex){
+        if (q && q.id && !incIds.has(q.id)){
+          merged.push(q);
+        }
+      }
+
+      return merged;
+    }
+
+    function exportPackActive(){
+      const id = ensureActiveProfile();
+      if (!id || !packProfileBox) return;
+
+      const profiles = getProfiles();
+      const meta = profiles.find(p => p.id === id) || { id, name: "Profil" };
+      const data = getProfileData(id);
+
+      const payload = {
+        kind: "pipboy_pack_mj",
+        v: 1,
+        exportedAt: new Date().toISOString(),
+        targetProfileName: meta.name,
+        briefing: "",
+        quests: (Array.isArray(data.quests) ? data.quests : []).map(normalizeQuest)
+      };
+
+      packProfileBox.value = JSON.stringify(payload, null, 2);
+
+      try {
+        const safeName = (meta.name || "profil").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+        const blob = new Blob([packProfileBox.value], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `pipboy-pack-${safeName || "profil"}-${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (e) {}
+    }
+
+    function applyPackActive(){
+      const id = ensureActiveProfile();
+      if (!id || !packProfileBox) return;
+
+      let obj;
+      try { obj = JSON.parse(packProfileBox.value); }
+      catch { alert("Pack MJ: JSON invalide 😵‍💫"); return; }
+
+      if (!obj || typeof obj !== "object") { alert("Pack MJ invalide"); return; }
+      if (obj.kind !== "pipboy_pack_mj" || !Array.isArray(obj.quests)) {
+        alert("Ce JSON n’est pas un Pack MJ PipBoy.");
+        return;
+      }
+
+      const data = getProfileData(id);
+      data.quests = mergeQuests(data.quests, obj.quests);
+      // briefing: on l’ajoute au journal en haut (sans écraser)
+      if (obj.briefing && String(obj.briefing).trim().length > 0){
+        const stamp = new Date().toISOString().slice(0,10);
+        const header = `[PACK MJ ${stamp}]`;
+        const block = `${header}\n${obj.briefing}\n\n`;
+        data.log = block + (data.log || "");
+      }
+
+      setProfileData(id, data);
+      loadActiveProfileToUI();
+      alert("Pack MJ appliqué ✅ (fusion + briefing)");
+    }
+
+    if (btnExportPackActive) btnExportPackActive.addEventListener("click", exportPackActive);
+    if (btnApplyPackActive) btnApplyPackActive.addEventListener("click", applyPackActive);
+    if (btnClearPackProfileBox && packProfileBox) btnClearPackProfileBox.addEventListener("click", () => { packProfileBox.value = ""; });
+
+    if (fileImportPackActive) {
+      fileImportPackActive.addEventListener("change", async () => {
+        const file = fileImportPackActive.files && fileImportPackActive.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          if (packProfileBox) packProfileBox.value = text;
+          applyPackActive();
+        } catch {
+          alert("Impossible de lire le pack 😵‍💫");
+        } finally {
+          fileImportPackActive.value = "";
         }
       });
     }
