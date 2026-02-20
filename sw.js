@@ -1,4 +1,4 @@
-const CACHE = "pipboy-v1";
+const CACHE = "pipboy-v16";
 const ASSETS = ["./","./index.html","./style.css","./sw.js","./manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
