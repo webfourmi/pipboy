@@ -39,17 +39,16 @@
           <button id="saveProfileName" type="button">Renommer</button>
           <button id="deleteProfile" class="danger" type="button">Supprimer</button>
         </div>
-        <p class="hint">Chaque profil a ses propres PV/Énergie/Journal/Inventaire.</p>
+        <p class="hint">Chaque profil a ses propres PV/Énergie/Quêtes/Journal/Inventaire.</p>
       </div>
 
       <!-- NOM EN SVG -->
       <div class="card">
         <h2>Identité</h2>
         <svg class="nameSvg" viewBox="0 0 800 120" role="img" aria-label="Nom du profil actif">
-          <!-- styles inline "béton" pour éviter soucis CSS -->
           <text id="profileNameSvg" x="18" y="82" fill="#b7ffd9" font-size="72" letter-spacing="6">P1</text>
         </svg>
-        <p class="hint">Affichage SVG (net à toutes tailles) + auto-fit si nom long.</p>
+        <p class="hint">SVG net + auto-fit si nom long.</p>
       </div>
 
       <div class="grid">
@@ -95,6 +94,29 @@
           <button id="clearLog" class="danger" type="button">Effacer</button>
           <button id="saveLog" type="button">Sauver</button>
         </div>
+      </div>
+
+      <!-- QUÊTES -->
+      <div class="card">
+        <h2>Quêtes</h2>
+        <p class="hint">Liste par profil: quêtes + objectifs cochables.</p>
+
+        <div class="row">
+          <input id="questTitle" type="text" placeholder="Nouvelle quête (ex: Retrouver le transpondeur)">
+          <button id="addQuest" type="button">Ajouter</button>
+        </div>
+
+        <div class="row">
+          <select id="questFilter">
+            <option value="ALL">Filtre: Toutes</option>
+            <option value="EN_COURS">EN COURS</option>
+            <option value="OK">OK</option>
+            <option value="RATEE">RATÉE</option>
+          </select>
+          <button id="clearDoneObjectives" type="button">Nettoyer objectifs OK</button>
+        </div>
+
+        <div id="quests" class="questList"></div>
       </div>
 
       <!-- Sauvegarde globale + profil actif -->
@@ -232,8 +254,18 @@
       return {
         status: { energy: 70, hp: 85, state: "OK" },
         log: "",
-        inv: []
+        inv: [],
+        quests: [] // <-- nouveau
       };
+    }
+
+    function normalizeProfileData(d){
+      const base = defaultProfileData();
+      const out = Object.assign({}, base, d || {});
+      out.status = Object.assign({}, base.status, (d && d.status) ? d.status : {});
+      out.inv = Array.isArray(out.inv) ? out.inv : [];
+      out.quests = Array.isArray(out.quests) ? out.quests : [];
+      return out;
     }
 
     function getProfiles(){ return store.get(PROFILES_KEY, []); }
@@ -241,11 +273,11 @@
     function getActiveId(){ return store.get(ACTIVE_KEY, null); }
     function setActiveId(id){ store.set(ACTIVE_KEY, id); }
     function profileKey(id){ return `pipboy_profile_${id}`; }
-    function getProfileData(id){ return store.get(profileKey(id), defaultProfileData()); }
-    function setProfileData(id, data){ store.set(profileKey(id), data); }
+    function getProfileData(id){ return normalizeProfileData(store.get(profileKey(id), defaultProfileData())); }
+    function setProfileData(id, data){ store.set(profileKey(id), normalizeProfileData(data)); }
     function deleteProfileData(id){ store.del(profileKey(id)); }
 
-    // Migration depuis ancien format (status/log/inv) -> profil P1
+    // Migration ancien format -> profil P1
     function migrateIfNeeded(){
       const profiles = getProfiles();
       if (profiles.length > 0) return;
@@ -295,7 +327,7 @@
         if (svgName) {
           svgName.textContent = activeMeta.name;
           svgName.setAttribute("fill", "#b7ffd9");
-          fitSvgText(svgName); // <-- auto-fit
+          fitSvgText(svgName);
         }
       }
     }
@@ -320,15 +352,15 @@
       if ($("energy")) $("energy").value = data.status.energy ?? 70;
       if ($("hp")) $("hp").value = data.status.hp ?? 85;
       if ($("state")) $("state").value = data.status.state ?? "OK";
-
       syncBar($("energy"), $("energyFill"), $("energyLabel"));
       syncBar($("hp"), $("hpFill"), $("hpLabel"));
 
       // DATA
       if ($("log")) $("log").value = data.log ?? "";
 
-      // INV
+      // INV + QUÊTES
       renderInv();
+      renderQuests();
       refreshProfilesUI();
     }
 
@@ -337,8 +369,8 @@
       if (!id) return;
 
       const current = getProfileData(id);
-
       const energyEl = $("energy"), hpEl = $("hp"), stateEl = $("state"), logEl = $("log");
+
       const status = {
         energy: energyEl ? Number(energyEl.value) : (current.status.energy ?? 70),
         hp: hpEl ? Number(hpEl.value) : (current.status.hp ?? 85),
@@ -348,7 +380,8 @@
       const updated = {
         status,
         log: logEl ? logEl.value : (current.log ?? ""),
-        inv: current.inv ?? []
+        inv: current.inv ?? [],
+        quests: current.quests ?? []
       };
 
       setProfileData(id, updated);
@@ -436,6 +469,209 @@
       setProfileData(id, data);
       renderInv();
     });
+
+    // --- QUÊTES / OBJECTIFS ---
+    const questTitle = $("questTitle");
+    const addQuestBtn = $("addQuest");
+    const questFilter = $("questFilter");
+    const questsBox = $("quests");
+    const clearDoneObjectivesBtn = $("clearDoneObjectives");
+
+    function newQuest(title){
+      return {
+        id: uid(),
+        title: title,
+        status: "EN_COURS", // EN_COURS | OK | RATEE
+        notes: "",
+        objectives: [] // {id,text,done}
+      };
+    }
+
+    function getQuestData(){
+      const id = ensureActiveProfile();
+      if (!id) return [];
+      const data = getProfileData(id);
+      return Array.isArray(data.quests) ? data.quests : [];
+    }
+
+    function setQuestData(quests){
+      const id = ensureActiveProfile();
+      if (!id) return;
+      const data = getProfileData(id);
+      data.quests = quests;
+      setProfileData(id, data);
+    }
+
+    function renderQuests(){
+      if (!questsBox) return;
+
+      const filter = questFilter ? questFilter.value : "ALL";
+      const quests = getQuestData();
+
+      const shown = (filter === "ALL") ? quests : quests.filter(q => q.status === filter);
+
+      if (shown.length === 0){
+        questsBox.innerHTML = `<p class="hint">Aucune quête pour ce profil (ou filtre vide).</p>`;
+        return;
+      }
+
+      questsBox.innerHTML = shown.map(q => {
+        const obj = Array.isArray(q.objectives) ? q.objectives : [];
+        const objHtml = obj.map(o => `
+          <li class="objLine">
+            <label class="objLabel">
+              <input type="checkbox" data-act="toggleObj" data-q="${q.id}" data-o="${o.id}" ${o.done ? "checked":""}>
+              <span>${escapeHtml(o.text)}</span>
+            </label>
+            <button class="mini" type="button" data-act="delObj" data-q="${q.id}" data-o="${o.id}">X</button>
+          </li>
+        `).join("");
+
+        return `
+          <div class="quest" data-q="${q.id}">
+            <div class="questHead">
+              <div class="questTitle">${escapeHtml(q.title)}</div>
+              <button class="mini danger" type="button" data-act="delQuest" data-q="${q.id}">SUPPR</button>
+            </div>
+
+            <div class="row">
+              <select data-act="setStatus" data-q="${q.id}">
+                <option value="EN_COURS" ${q.status==="EN_COURS"?"selected":""}>EN COURS</option>
+                <option value="OK" ${q.status==="OK"?"selected":""}>OK</option>
+                <option value="RATEE" ${q.status==="RATEE"?"selected":""}>RATÉE</option>
+              </select>
+            </div>
+
+            <textarea rows="3" placeholder="Notes…" data-act="notes" data-q="${q.id}">${escapeHtml(q.notes || "")}</textarea>
+
+            <div class="row">
+              <input type="text" placeholder="Ajouter un objectif…" data-act="objInput" data-q="${q.id}">
+              <button type="button" data-act="addObj" data-q="${q.id}">+</button>
+            </div>
+
+            <ul class="objList">${objHtml || `<li class="hint">Aucun objectif.</li>`}</ul>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    if (addQuestBtn) addQuestBtn.addEventListener("click", () => {
+      const title = questTitle ? questTitle.value.trim() : "";
+      if (!title) return;
+
+      const quests = getQuestData();
+      quests.unshift(newQuest(title));
+      setQuestData(quests);
+
+      if (questTitle) questTitle.value = "";
+      renderQuests();
+    });
+
+    if (questFilter) questFilter.addEventListener("change", renderQuests);
+
+    if (clearDoneObjectivesBtn) clearDoneObjectivesBtn.addEventListener("click", () => {
+      const quests = getQuestData();
+      quests.forEach(q => {
+        q.objectives = (Array.isArray(q.objectives) ? q.objectives : []).filter(o => !o.done);
+      });
+      setQuestData(quests);
+      renderQuests();
+    });
+
+    // Délégation d'événements (quêtes)
+    if (questsBox) {
+      questsBox.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        const act = t.getAttribute("data-act");
+        const qid = t.getAttribute("data-q");
+        const oid = t.getAttribute("data-o");
+        if (!act || !qid) return;
+
+        const quests = getQuestData();
+        const q = quests.find(x => x.id === qid);
+        if (!q) return;
+
+        if (act === "delQuest"){
+          const filtered = quests.filter(x => x.id !== qid);
+          setQuestData(filtered);
+          renderQuests();
+          return;
+        }
+
+        if (act === "addObj"){
+          const input = questsBox.querySelector(`input[data-act="objInput"][data-q="${qid}"]`);
+          const text = (input && input.value) ? input.value.trim() : "";
+          if (!text) return;
+          q.objectives = Array.isArray(q.objectives) ? q.objectives : [];
+          q.objectives.push({ id: uid(), text, done:false });
+          setQuestData(quests);
+          renderQuests();
+          return;
+        }
+
+        if (act === "delObj" && oid){
+          q.objectives = (Array.isArray(q.objectives) ? q.objectives : []).filter(o => o.id !== oid);
+          setQuestData(quests);
+          renderQuests();
+          return;
+        }
+      });
+
+      questsBox.addEventListener("change", (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        const act = t.getAttribute("data-act");
+        const qid = t.getAttribute("data-q");
+        const oid = t.getAttribute("data-o");
+
+        const quests = getQuestData();
+        const q = quests.find(x => x.id === qid);
+        if (!q) return;
+
+        if (act === "setStatus" && t instanceof HTMLSelectElement){
+          q.status = t.value;
+          setQuestData(quests);
+          renderQuests();
+          return;
+        }
+
+        if (act === "toggleObj" && t instanceof HTMLInputElement && oid){
+          q.objectives = Array.isArray(q.objectives) ? q.objectives : [];
+          const o = q.objectives.find(x => x.id === oid);
+          if (o) o.done = !!t.checked;
+          setQuestData(quests);
+          // pas besoin de re-render complet, mais ok:
+          renderQuests();
+          return;
+        }
+      });
+
+      // notes: sauvegarde au blur (quand on sort du champ)
+      questsBox.addEventListener("blur", (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        const act = t.getAttribute("data-act");
+        const qid = t.getAttribute("data-q");
+        if (act !== "notes" || !qid) return;
+
+        const quests = getQuestData();
+        const q = quests.find(x => x.id === qid);
+        if (!q || !(t instanceof HTMLTextAreaElement)) return;
+
+        q.notes = t.value;
+        setQuestData(quests);
+      }, true);
+    }
 
     // --- Profils: changer / créer / renommer / supprimer ---
     if (profileSelect) profileSelect.addEventListener("change", () => {
@@ -531,7 +767,7 @@
       if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object") {
         setProfiles(obj.profiles);
         Object.keys(obj.dataByProfile).forEach(id => {
-          setProfileData(id, obj.dataByProfile[id]);
+          setProfileData(id, obj.dataByProfile[id]); // normalize inclus
         });
         if (obj.activeProfileId) setActiveId(obj.activeProfileId);
         loadActiveProfileToUI();
@@ -628,7 +864,8 @@
         data = {
           status: obj.status || { energy: 70, hp: 85, state: "OK" },
           log: (typeof obj.log === "string") ? obj.log : "",
-          inv: Array.isArray(obj.inv) ? obj.inv : []
+          inv: Array.isArray(obj.inv) ? obj.inv : [],
+          quests: []
         };
       }
 
