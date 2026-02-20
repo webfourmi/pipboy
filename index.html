@@ -114,6 +114,7 @@
           </select>
           <button id="clearDoneObjectives" type="button">Nettoyer objectifs OK</button>
         </div>
+        <div id="questCounts" class="tiny"></div>
 
         <div id="quests" class="questList"></div>
       </div>
@@ -451,6 +452,7 @@
     const addQuestBtn = $("addQuest");
     const questFilter = $("questFilter");
     const questsBox = $("quests");
+    const questCounts = $("questCounts");
     const clearDoneObjectivesBtn = $("clearDoneObjectives");
 
     function newQuest(title){
@@ -477,9 +479,12 @@
 
       const mode = questFilter ? questFilter.value : "BOARD";
       const quests = getQuestData();
-
-      const statusLabel = { EN_COURS: "EN COURS", OK: "OK", RATEE: "RATÉE" };
-      const order = { EN_COURS: 0, OK: 1, RATEE: 2 };
+      const cEn = quests.filter(q => q.status === "EN_COURS").length;
+      const cOk = quests.filter(q => q.status === "OK").length;
+      const cRa = quests.filter(q => q.status === "RATEE").length;
+      if (questCounts) questCounts.textContent = `EN COURS (${cEn}) • OK (${cOk}) • RATÉE (${cRa})`;
+       const statusLabel = { EN_COURS: "EN COURS", OK: "OK", RATEE: "RATÉE" };
+       const order = { EN_COURS: 0, OK: 1, RATEE: 2 };
 
       let shown = quests.slice();
 
