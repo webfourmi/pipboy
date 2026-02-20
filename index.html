@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0b1a12" />
-  <title>Pip-Boy Spatial</title>
+  <title>Pip-Boy Spatial v16</title>
 
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css" />
@@ -14,7 +14,6 @@
   <header class="topbar">
     <div class="brand">PIP-BOY // ORION</div>
     <div class="clock" id="clock">--:--</div>
-    
   </header>
 
   <main class="shell">
@@ -97,7 +96,10 @@
 
       <!-- QUÊTES -->
       <div class="card">
-        <h2>Quêtes</h2>
+        <div class="row" style="align-items:center; justify-content:space-between; gap:10px;">
+          <h2 style="margin:0;">Quêtes</h2>
+          <button id="copyDiag" type="button">Copier diagnostic</button>
+        </div>
         <p class="hint">Vue tableau: EN COURS en haut, puis OK, puis RATÉE.</p>
 
         <div class="row">
@@ -187,6 +189,8 @@
   </main>
 
   <script>
+    const APP_VERSION = "v16";
+
     // Horloge
     function tick(){
       const d = new Date();
@@ -196,9 +200,7 @@
       if (el) el.textContent = `${hh}:${mm}`;
     }
     tick(); setInterval(tick, 1000);
-    // version
-    const APP_VERSION = "v15";
-    
+
     // Navigation onglets
     document.querySelectorAll('.tab').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -321,14 +323,12 @@
         opt.textContent = p.name;
         if (p.id === activeId) opt.selected = true;
         profileSelect.appendChild(opt);
-
-      if (activeHint) activeHint.textContent = `PROFIL: ${activeMeta.name} • LOCAL SAVE • ${APP_VERSION}`;  
       });
 
       const activeMeta = profiles.find(p => p.id === activeId) || profiles[0];
       if (activeMeta){
         if (profileName) profileName.value = activeMeta.name;
-        if (activeHint) activeHint.textContent = `PROFIL: ${activeMeta.name} • LOCAL SAVE`;
+        if (activeHint) activeHint.textContent = `PROFIL: ${activeMeta.name} • LOCAL SAVE • ${APP_VERSION}`;
         if (svgName) {
           svgName.textContent = activeMeta.name;
           svgName.setAttribute("fill", "#b7ffd9");
@@ -677,6 +677,36 @@
         setQuestData(quests);
       }, true);
     }
+
+    // Diagnostic (copie)
+    const copyDiagBtn = $("copyDiag");
+    if (copyDiagBtn) copyDiagBtn.addEventListener("click", async () => {
+      const id = ensureActiveProfile();
+      const profiles = getProfiles();
+      const meta = profiles.find(p => p.id === id);
+      const data = id ? getProfileData(id) : defaultProfileData();
+
+      const q = Array.isArray(data.quests) ? data.quests : [];
+      const cEn = q.filter(x => x.status === "EN_COURS").length;
+      const cOk = q.filter(x => x.status === "OK").length;
+      const cRa = q.filter(x => x.status === "RATEE").length;
+
+      const diag = [
+        `PIPBOY ${APP_VERSION}`,
+        `Profil: ${(meta && meta.name) ? meta.name : "?"} (${id || "no-id"})`,
+        `Energie: ${data.status?.energy ?? "?"}% | PV: ${data.status?.hp ?? "?"}% | Etat: ${data.status?.state ?? "?"}`,
+        `Quetes: EN_COURS ${cEn} | OK ${cOk} | RATEE ${cRa}`,
+        `URL: ${location.href}`,
+        `UA: ${navigator.userAgent}`
+      ].join("\n");
+
+      try {
+        await navigator.clipboard.writeText(diag);
+        alert("Diagnostic copié ✅");
+      } catch {
+        alert("Copie impossible (le navigateur bloque). Tu peux copier depuis la zone Sauvegarde à la place.");
+      }
+    });
 
     // PROFILS: changer / créer / renommer / supprimer
     if (profileSelect) profileSelect.addEventListener("change", () => {
