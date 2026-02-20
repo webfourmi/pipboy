@@ -1067,8 +1067,9 @@
 
       const payload = {
         kind: "pipboy_pack_mj",
-        v: 1,
+        v: 2,
         exportedAt: new Date().toISOString(),
+        campaignId: (meta.campaign || "").trim() || "ORION",
         targetProfileName: meta.name,
         briefing: "",
         quests: (Array.isArray(data.quests) ? data.quests : []).map(normalizeQuest)
