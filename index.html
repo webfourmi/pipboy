@@ -748,7 +748,7 @@
       const profiles = getProfiles();
       const id = uid();
       const name = `P${profiles.length + 1}`;
-      profiles.push({ id, name, createdAt: new Date().toISOString() });
+      profiles.push({ id, name, campaign: "ORION", createdAt: new Date().toISOString() });
       setProfiles(profiles);
       setProfileData(id, defaultProfileData());
       setActiveId(id);
