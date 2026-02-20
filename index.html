@@ -186,9 +186,10 @@
 
         <textarea id="packProfileBox" rows="8" placeholder="Pack MJ (export ou collage)…"></textarea>
 
-        <div class="row right">
+       <div class="row right">
           <button id="clearPackProfileBox" class="danger" type="button">Vider</button>
-          <button id="applyPackActive" type="button">Appliquer Pack MJ</button>
+          <button id="applyPackActive" type="button">Appliquer (profil)</button>
+          <button id="applyPackCampaign" type="button">Appliquer (campagne)</button>
         </div>
       </div>
     </section>
@@ -1108,6 +1109,59 @@
       const data = getProfileData(id);
       data.quests = mergeQuests(data.quests, obj.quests);
       // briefing: on l’ajoute au journal en haut (sans écraser)
+
+      const btnApplyPackCampaign = $("applyPackCampaign");
+
+    function applyPackCampaign(){
+      const profiles = getProfiles();
+      if (!profiles || profiles.length === 0) return;
+      if (!packProfileBox) return;
+    
+      let obj;
+      try { obj = JSON.parse(packProfileBox.value); }
+      catch { alert("Pack MJ: JSON invalide 😵‍💫"); return; }
+    
+      if (!obj || typeof obj !== "object" || obj.kind !== "pipboy_pack_mj" || !Array.isArray(obj.quests)){
+        alert("Ce JSON n’est pas un Pack MJ PipBoy.");
+        return;
+      }
+    
+      const campaignId = String(obj.campaignId || "").trim();
+      if (!campaignId){
+        alert("Pack MJ: campaignId manquant. (Ex: ORION)");
+        return;
+      }
+    
+      const targets = profiles.filter(p => String(p.campaign || "").trim() === campaignId);
+      if (targets.length === 0){
+        alert(`Aucun profil avec la campagne "${campaignId}".`);
+        return;
+      }
+    
+      const ok = confirm(`Appliquer le Pack MJ campagne "${campaignId}" à ${targets.length} profil(s) ?`);
+      if (!ok) return;
+    
+      for (const p of targets){
+        const data = getProfileData(p.id);
+        data.quests = mergeQuests(data.quests, obj.quests);
+    
+        if (obj.briefing && String(obj.briefing).trim().length > 0){
+          const stamp = new Date().toISOString().slice(0,10);
+          const header = `[PACK MJ ${campaignId} ${stamp}]`;
+          const block = `${header}\n${obj.briefing}\n\n`;
+          data.log = block + (data.log || "");
+        }
+    
+        setProfileData(p.id, data);
+      }
+    
+      loadActiveProfileToUI();
+      alert(`Pack MJ appliqué à la campagne "${campaignId}" ✅`);
+    }
+    
+    if (btnApplyPackCampaign) {
+      btnApplyPackCampaign.addEventListener("click", applyPackCampaign);
+    }
       if (obj.briefing && String(obj.briefing).trim().length > 0){
         const stamp = new Date().toISOString().slice(0,10);
         const header = `[PACK MJ ${stamp}]`;
