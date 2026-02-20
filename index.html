@@ -214,7 +214,7 @@
   </main>
 
   <script>
-    const APP_VERSION = "v17";
+    const APP_VERSION = "v18";
 
     // Horloge
     function tick(){
@@ -1108,6 +1108,48 @@
       loadActiveProfileToUI();
       alert("Pack MJ appliqué ✅ (fusion + briefing)");
     }
+    const btnApplyPackAllProfiles = $("applyPackAllProfiles");
+    
+    function applyPackAllProfiles(){
+      const profiles = getProfiles();
+      if (!profiles || profiles.length === 0) return;
+      if (!packProfileBox) return;
+    
+      let obj;
+      try { obj = JSON.parse(packProfileBox.value); }
+      catch { alert("Pack MJ: JSON invalide 😵‍💫"); return; }
+    
+      if (!obj || typeof obj !== "object" || obj.kind !== "pipboy_pack_mj" || !Array.isArray(obj.quests)){
+        alert("Ce JSON n’est pas un Pack MJ PipBoy.");
+        return;
+      }
+
+    const ok = confirm(`Appliquer ce Pack MJ à TOUS les profils de ce téléphone ? (${profiles.length})`);
+    if (!ok) return;
+  
+    for (const p of profiles){
+      const data = getProfileData(p.id);
+      data.quests = mergeQuests(data.quests, obj.quests);
+  
+      if (obj.briefing && String(obj.briefing).trim().length > 0){
+        const stamp = new Date().toISOString().slice(0,10);
+        const header = `[PACK MJ ${stamp}]`;
+        const block = `${header}\n${obj.briefing}\n\n`;
+        data.log = block + (data.log || "");
+      }
+  
+      setProfileData(p.id, data);
+    }
+  
+    loadActiveProfileToUI();
+    alert("Pack MJ appliqué à tous les profils ✅");
+  }
+  
+  if (btnApplyPackAllProfiles) {
+    btnApplyPackAllProfiles.addEventListener("click", applyPackAllProfiles);
+  }
+
+    
 
     if (btnExportPackActive) btnExportPackActive.addEventListener("click", exportPackActive);
     if (btnApplyPackActive) btnApplyPackActive.addEventListener("click", applyPackActive);
