@@ -27,7 +27,6 @@
     <section class="view active" id="status">
       <h1>STATUT</h1>
 
-      <!-- PROFILS -->
       <div class="card">
         <h2>Profil</h2>
         <div class="row">
@@ -42,7 +41,6 @@
         <p class="hint">Chaque profil a ses propres PV/Énergie/Quêtes/Journal/Inventaire.</p>
       </div>
 
-      <!-- NOM EN SVG -->
       <div class="card">
         <h2>Identité</h2>
         <svg class="nameSvg" viewBox="0 0 800 120" role="img" aria-label="Nom du profil actif">
@@ -99,35 +97,34 @@
       <!-- QUÊTES -->
       <div class="card">
         <h2>Quêtes</h2>
-        <p class="hint">Liste par profil: quêtes + objectifs cochables.</p>
+        <p class="hint">Vue tableau: EN COURS en haut, puis OK, puis RATÉE.</p>
 
         <div class="row">
           <input id="questTitle" type="text" placeholder="Nouvelle quête (ex: Retrouver le transpondeur)">
           <button id="addQuest" type="button">Ajouter</button>
         </div>
 
-       <div class="row">
-        <select id="questFilter">
-         <option value="BOARD">Vue: Tableau (EN COURS en haut)</option>
-         <option value="ALL">Filtre: Toutes (ordre actuel)</option>
-         <option value="EN_COURS">EN COURS</option>
-         <option value="OK">OK</option>
-         <option value="RATEE">RATÉE</option>
-        </select>
-       <button id="clearDoneObjectives" type="button">Nettoyer objectifs OK</button>
-      </div>
+        <div class="row">
+          <select id="questFilter">
+            <option value="BOARD">Vue: Tableau (EN COURS en haut)</option>
+            <option value="ALL">Filtre: Toutes (ordre actuel)</option>
+            <option value="EN_COURS">EN COURS</option>
+            <option value="OK">OK</option>
+            <option value="RATEE">RATÉE</option>
+          </select>
+          <button id="clearDoneObjectives" type="button">Nettoyer objectifs OK</button>
+        </div>
 
         <div id="quests" class="questList"></div>
       </div>
 
-      <!-- Sauvegarde globale + profil actif -->
+      <!-- Sauvegarde -->
       <div class="card">
         <h2>Sauvegarde</h2>
         <p class="hint">Exporter/Importer tous les profils (et le profil actif).</p>
 
         <div class="row">
           <button id="exportAll" type="button">Exporter JSON</button>
-
           <label class="filebtn">
             Importer fichier
             <input id="fileImport" type="file" accept="application/json,.json">
@@ -148,7 +145,6 @@
 
         <div class="row">
           <button id="exportActive" type="button">Exporter ce profil</button>
-
           <label class="filebtn">
             Importer dans ce profil
             <input id="fileImportActive" type="file" accept="application/json,.json">
@@ -189,7 +185,6 @@
   </main>
 
   <script>
-    // Horloge
     function tick(){
       const d = new Date();
       const hh = String(d.getHours()).padStart(2,'0');
@@ -199,7 +194,6 @@
     }
     tick(); setInterval(tick, 1000);
 
-    // Navigation onglets
     document.querySelectorAll('.tab').forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.dataset.view;
@@ -212,7 +206,6 @@
       });
     });
 
-    // Helpers
     const $ = (id) => document.getElementById(id);
     const store = {
       get(k, fallback){ try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } },
@@ -220,21 +213,13 @@
       del(k){ localStorage.removeItem(k); }
     };
 
-    // --- Auto-fit SVG (nom long) ---
     function fitSvgText(textEl, maxWidth = 760, maxSize = 72, minSize = 28){
       if (!textEl) return;
-
       let size = maxSize;
       textEl.setAttribute("font-size", String(size));
-
-      const getW = () => {
-        try { return textEl.getComputedTextLength(); }
-        catch { return 0; }
-      };
-
+      const getW = () => { try { return textEl.getComputedTextLength(); } catch { return 0; } };
       let w = getW();
       let guard = 0;
-
       while (w > maxWidth && size > minSize && guard < 80){
         size -= 2;
         textEl.setAttribute("font-size", String(size));
@@ -243,7 +228,6 @@
       }
     }
 
-    // --- MULTI-PROFILS ---
     const PROFILES_KEY = "pipboy_profiles";
     const ACTIVE_KEY = "pipboy_active_profile";
 
@@ -256,7 +240,7 @@
         status: { energy: 70, hp: 85, state: "OK" },
         log: "",
         inv: [],
-        quests: [] // <-- nouveau
+        quests: []
       };
     }
 
@@ -278,7 +262,6 @@
     function setProfileData(id, data){ store.set(profileKey(id), normalizeProfileData(data)); }
     function deleteProfileData(id){ store.del(profileKey(id)); }
 
-    // Migration ancien format -> profil P1
     function migrateIfNeeded(){
       const profiles = getProfiles();
       if (profiles.length > 0) return;
@@ -300,7 +283,6 @@
     }
     migrateIfNeeded();
 
-    // UI profils
     const profileSelect = $("profileSelect");
     const profileName = $("profileName");
     const activeHint = $("activeProfileHint");
@@ -349,17 +331,14 @@
 
       const data = getProfileData(id);
 
-      // STATUS
       if ($("energy")) $("energy").value = data.status.energy ?? 70;
       if ($("hp")) $("hp").value = data.status.hp ?? 85;
       if ($("state")) $("state").value = data.status.state ?? "OK";
       syncBar($("energy"), $("energyFill"), $("energyLabel"));
       syncBar($("hp"), $("hpFill"), $("hpLabel"));
 
-      // DATA
       if ($("log")) $("log").value = data.log ?? "";
 
-      // INV + QUÊTES
       renderInv();
       renderQuests();
       refreshProfilesUI();
@@ -388,7 +367,6 @@
       setProfileData(id, updated);
     }
 
-    // --- STATUS (barres) ---
     function syncBar(rangeEl, fillEl, labelEl){
       if (!rangeEl || !fillEl || !labelEl) return;
       const val = Number(rangeEl.value);
@@ -405,13 +383,11 @@
       if (s) s.addEventListener(evt, () => { saveActiveProfileFromUI(); });
     });
 
-    // --- DATA (journal) ---
     const btnSaveLog = $("saveLog");
     const btnClearLog = $("clearLog");
     if (btnSaveLog) btnSaveLog.addEventListener("click", () => saveActiveProfileFromUI());
     if (btnClearLog) btnClearLog.addEventListener("click", () => { if ($("log")) $("log").value = ""; saveActiveProfileFromUI(); });
 
-    // --- INV ---
     function renderInv(){
       const id = ensureActiveProfile();
       const data = id ? getProfileData(id) : defaultProfileData();
@@ -424,7 +400,7 @@
 
       arr.forEach((txt, idx) => {
         const li = document.createElement("li");
-        li.innerHTML = `<span>${txt}</span><button class="mini" data-i="${idx}" type="button">X</button>`;
+        li.innerHTML = `<span>${escapeHtml(txt)}</span><button class="mini" data-i="${idx}" type="button">X</button>`;
         itemsUl.appendChild(li);
       });
 
@@ -471,7 +447,6 @@
       renderInv();
     });
 
-    // --- QUÊTES / OBJECTIFS ---
     const questTitle = $("questTitle");
     const addQuestBtn = $("addQuest");
     const questFilter = $("questFilter");
@@ -479,13 +454,7 @@
     const clearDoneObjectivesBtn = $("clearDoneObjectives");
 
     function newQuest(title){
-      return {
-        id: uid(),
-        title: title,
-        status: "EN_COURS", // EN_COURS | OK | RATEE
-        notes: "",
-        objectives: [] // {id,text,done}
-      };
+      return { id: uid(), title, status: "EN_COURS", notes: "", objectives: [] };
     }
 
     function getQuestData(){
@@ -506,17 +475,36 @@
     function renderQuests(){
       if (!questsBox) return;
 
-      const filter = questFilter ? questFilter.value : "ALL";
+      const mode = questFilter ? questFilter.value : "BOARD";
       const quests = getQuestData();
 
-      const shown = (filter === "ALL") ? quests : quests.filter(q => q.status === filter);
+      const statusLabel = { EN_COURS: "EN COURS", OK: "OK", RATEE: "RATÉE" };
+      const order = { EN_COURS: 0, OK: 1, RATEE: 2 };
+
+      let shown = quests.slice();
+
+      if (mode === "BOARD"){
+        shown.sort((a,b) => (order[a.status] ?? 9) - (order[b.status] ?? 9));
+      } else if (mode === "ALL"){
+        // ordre actuel
+      } else {
+        shown = shown.filter(q => q.status === mode);
+      }
 
       if (shown.length === 0){
         questsBox.innerHTML = `<p class="hint">Aucune quête pour ce profil (ou filtre vide).</p>`;
         return;
       }
 
-      questsBox.innerHTML = shown.map(q => {
+      let html = "";
+      let lastStatus = null;
+
+      for (const q of shown){
+        if (mode === "BOARD" && q.status !== lastStatus){
+          lastStatus = q.status;
+          html += `<div class="questSection"><div class="questSectionTitle">${statusLabel[q.status] ?? q.status}</div></div>`;
+        }
+
         const obj = Array.isArray(q.objectives) ? q.objectives : [];
         const objHtml = obj.map(o => `
           <li class="objLine">
@@ -528,7 +516,7 @@
           </li>
         `).join("");
 
-        return `
+        html += `
           <div class="quest" data-q="${q.id}">
             <div class="questHead">
               <div class="questTitle">${escapeHtml(q.title)}</div>
@@ -553,7 +541,9 @@
             <ul class="objList">${objHtml || `<li class="hint">Aucun objectif.</li>`}</ul>
           </div>
         `;
-      }).join("");
+      }
+
+      questsBox.innerHTML = html;
     }
 
     function escapeHtml(s){
@@ -568,11 +558,9 @@
     if (addQuestBtn) addQuestBtn.addEventListener("click", () => {
       const title = questTitle ? questTitle.value.trim() : "";
       if (!title) return;
-
       const quests = getQuestData();
       quests.unshift(newQuest(title));
       setQuestData(quests);
-
       if (questTitle) questTitle.value = "";
       renderQuests();
     });
@@ -588,7 +576,6 @@
       renderQuests();
     });
 
-    // Délégation d'événements (quêtes)
     if (questsBox) {
       questsBox.addEventListener("click", (e) => {
         const t = e.target;
@@ -603,8 +590,7 @@
         if (!q) return;
 
         if (act === "delQuest"){
-          const filtered = quests.filter(x => x.id !== qid);
-          setQuestData(filtered);
+          setQuestData(quests.filter(x => x.id !== qid));
           renderQuests();
           return;
         }
@@ -651,13 +637,10 @@
           const o = q.objectives.find(x => x.id === oid);
           if (o) o.done = !!t.checked;
           setQuestData(quests);
-          // pas besoin de re-render complet, mais ok:
           renderQuests();
-          return;
         }
       });
 
-      // notes: sauvegarde au blur (quand on sort du champ)
       questsBox.addEventListener("blur", (e) => {
         const t = e.target;
         if (!(t instanceof HTMLElement)) return;
@@ -674,7 +657,6 @@
       }, true);
     }
 
-    // --- Profils: changer / créer / renommer / supprimer ---
     if (profileSelect) profileSelect.addEventListener("change", () => {
       setActiveId(profileSelect.value);
       loadActiveProfileToUI();
@@ -726,24 +708,12 @@
       loadActiveProfileToUI();
     });
 
-    // --- EXPORT / IMPORT (tous profils) ---
     const backupBox = $("backupBox");
 
     function exportAll(){
-      const payload = {
-        v: 2,
-        exportedAt: new Date().toISOString(),
-        activeProfileId: getActiveId(),
-        profiles: getProfiles(),
-        dataByProfile: {}
-      };
-
-      payload.profiles.forEach(p => {
-        payload.dataByProfile[p.id] = getProfileData(p.id);
-      });
-
+      const payload = { v: 2, exportedAt: new Date().toISOString(), activeProfileId: getActiveId(), profiles: getProfiles(), dataByProfile: {} };
+      payload.profiles.forEach(p => { payload.dataByProfile[p.id] = getProfileData(p.id); });
       if (backupBox) backupBox.value = JSON.stringify(payload, null, 2);
-
       try {
         const blob = new Blob([backupBox.value], { type: "application/json" });
         const url = URL.createObjectURL(blob);
@@ -762,14 +732,11 @@
       let obj;
       try { obj = JSON.parse(backupBox.value); }
       catch { alert("JSON invalide 😵‍💫"); return; }
-
       if (!obj || typeof obj !== "object") { alert("JSON invalide"); return; }
 
       if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object") {
         setProfiles(obj.profiles);
-        Object.keys(obj.dataByProfile).forEach(id => {
-          setProfileData(id, obj.dataByProfile[id]); // normalize inclus
-        });
+        Object.keys(obj.dataByProfile).forEach(id => { setProfileData(id, obj.dataByProfile[id]); });
         if (obj.activeProfileId) setActiveId(obj.activeProfileId);
         loadActiveProfileToUI();
         alert("Import appliqué ✅");
@@ -794,7 +761,6 @@
     const btnExport = $("exportAll");
     const btnClear  = $("clearBox");
     const btnApply  = $("applyImport");
-
     if (btnExport) btnExport.addEventListener("click", exportAll);
     if (btnClear && backupBox) btnClear.addEventListener("click", () => { backupBox.value = ""; });
     if (btnApply) btnApply.addEventListener("click", applyImport);
@@ -816,7 +782,6 @@
       });
     }
 
-    // --- EXPORT / IMPORT : PROFIL ACTIF ---
     const backupProfileBox = $("backupProfileBox");
 
     function exportActiveProfile(){
@@ -826,13 +791,7 @@
       const profiles = getProfiles();
       const meta = profiles.find(p => p.id === id) || { id, name: "Profil", createdAt: "" };
 
-      const payload = {
-        v: 1,
-        exportedAt: new Date().toISOString(),
-        profile: meta,
-        data: getProfileData(id)
-      };
-
+      const payload = { v: 1, exportedAt: new Date().toISOString(), profile: meta, data: getProfileData(id) };
       backupProfileBox.value = JSON.stringify(payload, null, 2);
 
       try {
@@ -862,12 +821,7 @@
       if (obj && typeof obj === "object" && obj.data && typeof obj.data === "object") {
         data = obj.data;
       } else if (obj && typeof obj === "object" && (obj.status || obj.log || obj.inv)) {
-        data = {
-          status: obj.status || { energy: 70, hp: 85, state: "OK" },
-          log: (typeof obj.log === "string") ? obj.log : "",
-          inv: Array.isArray(obj.inv) ? obj.inv : [],
-          quests: []
-        };
+        data = { status: obj.status || { energy: 70, hp: 85, state: "OK" }, log: (typeof obj.log === "string") ? obj.log : "", inv: Array.isArray(obj.inv) ? obj.inv : [], quests: [] };
       }
 
       if (!data) { alert("Format non reconnu 😵‍💫"); return; }
@@ -880,7 +834,6 @@
     const btnExportActive = $("exportActive");
     const btnApplyActive  = $("applyImportActive");
     const btnClearActive  = $("clearProfileBox");
-
     if (btnExportActive) btnExportActive.addEventListener("click", exportActiveProfile);
     if (btnApplyActive) btnApplyActive.addEventListener("click", applyImportActiveProfile);
     if (btnClearActive && backupProfileBox) btnClearActive.addEventListener("click", () => { backupProfileBox.value = ""; });
@@ -902,11 +855,9 @@
       });
     }
 
-    // Chargement initial
     refreshProfilesUI();
     loadActiveProfileToUI();
 
-    // PWA offline
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("./sw.js");
     }
