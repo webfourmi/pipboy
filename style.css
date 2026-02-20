@@ -226,3 +226,10 @@ textarea#backupProfileBox{
   letter-spacing: 6px;
   fill: var(--text);
 }
+.questSection{ margin-top: 6px; }
+.questSectionTitle{
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 6px 2px;
+}
