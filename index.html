@@ -357,7 +357,8 @@
       const activeMeta = profiles.find(p => p.id === activeId) || profiles[0];
       if (activeMeta){
         if (profileName) profileName.value = activeMeta.name;
-        if (activeHint) activeHint.textContent = `PROFIL: ${activeMeta.name} • LOCAL SAVE • ${APP_VERSION}`;
+        if (profileCampaign) profileCampaign.value = activeMeta.campaign || "";
+        if (activeHint) activeHint.textContent = `PROFIL: ${activeMeta.name} • ${activeMeta.campaign || "—"} • LOCAL SAVE • ${APP_VERSION}`;
         if (svgName) {
           svgName.textContent = activeMeta.name;
           svgName.setAttribute("fill", "#b7ffd9");
@@ -748,6 +749,7 @@
       const profiles = getProfiles();
       const id = uid();
       const name = `P${profiles.length + 1}`;
+      const profileCampaign = $("profileCampaign");
       profiles.push({ id, name, campaign: "ORION", createdAt: new Date().toISOString() });
       setProfiles(profiles);
       setProfileData(id, defaultProfileData());
@@ -759,12 +761,16 @@
     if (btnSaveName) btnSaveName.addEventListener("click", () => {
       const id = ensureActiveProfile();
       if (!id) return;
+
       const newName = (profileName ? profileName.value : "").trim();
-      if (!newName) return;
+      const newCampaign = (profileCampaign ? profileCampaign.value : "").trim();
 
       const profiles = getProfiles();
       const p = profiles.find(x => x.id === id);
-      if (p) p.name = newName;
+      if (p) {
+        if (newName) p.name = newName;
+        p.campaign = newCampaign;
+      }
       setProfiles(profiles);
       refreshProfilesUI();
     });
