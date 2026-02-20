@@ -14,6 +14,7 @@
   <header class="topbar">
     <div class="brand">PIP-BOY // ORION</div>
     <div class="clock" id="clock">--:--</div>
+    
   </header>
 
   <main class="shell">
@@ -181,7 +182,7 @@
     </section>
 
     <footer class="footnote">
-      <div class="tiny" id="activeProfileHint">PROFIL: -- • LOCAL SAVE</div>
+      <div class="tiny" id="activeProfileHint">PROFIL: -- • LOCAL SAVE • v?</div>
     </footer>
   </main>
 
@@ -195,7 +196,9 @@
       if (el) el.textContent = `${hh}:${mm}`;
     }
     tick(); setInterval(tick, 1000);
-
+    // version
+    const APP_VERSION = "v15";
+    
     // Navigation onglets
     document.querySelectorAll('.tab').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -318,6 +321,8 @@
         opt.textContent = p.name;
         if (p.id === activeId) opt.selected = true;
         profileSelect.appendChild(opt);
+
+      if (activeHint) activeHint.textContent = `PROFIL: ${activeMeta.name} • LOCAL SAVE • ${APP_VERSION}`;  
       });
 
       const activeMeta = profiles.find(p => p.id === activeId) || profiles[0];
