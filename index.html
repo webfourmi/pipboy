@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0b1a12" />
-  <title>Pip-Boy Spatial v19</title>
+  <title>Pip-Boy Spatial v20</title>
 
-  <link rel="manifest" href="manifest.json?v=18">
+  <link rel="manifest" href="manifest.json?v=20">
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="icons/favicon.ico">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -15,7 +15,11 @@
 <body>
   <header class="topbar">
     <div class="brand">PIP-BOY // ORION</div>
-    <div class="clock" id="clock">--:--</div>
+
+    <div class="topbarActions">
+      <button id="openProfile" class="miniBtn" type="button">PROFIL</button>
+      <div class="clock" id="clock">--:--</div>
+    </div>
   </header>
 
   <main class="shell">
@@ -30,29 +34,12 @@
       <h1>STATUT</h1>
 
       <div class="card">
-        <h2>Profil</h2>
-        <div class="row">
-          <select id="profileSelect"></select>
-          <button id="newProfile" type="button">Nouveau</button>
-        </div>
-        <div class="row">
-          <input id="profileName" type="text" placeholder="Nom du profil">
-          <input id="profileCampaign" type="text" placeholder="Campagne (ex: ORION)">
-        </div>
-        <div class="row">
-          <button id="saveProfileName" type="button">Sauver</button>
-          <button id="deleteProfile" class="danger" type="button">Supprimer</button>
-        </div>
-        <p class="hint">Astuce: même “Campagne” = même Pack MJ appliqué en masse.</p>
-        <p class="hint">Chaque profil a ses propres PV/Énergie/Quêtes/Journal/Inventaire.</p>
-      </div>
-
-      <div class="card">
         <h2>Identité</h2>
         <svg class="nameSvg" viewBox="0 0 800 120" role="img" aria-label="Nom du profil actif">
           <text id="profileNameSvg" x="18" y="82" fill="#b7ffd9" font-size="72" letter-spacing="6">P1</text>
         </svg>
-        <p class="hint">SVG net + auto-fit si nom long.</p>
+        <div class="tiny" id="profileMiniLine">Campagne: —</div>
+        <p class="hint">Modifier via le bouton PROFIL.</p>
       </div>
 
       <div class="grid">
@@ -175,18 +162,16 @@
 
         <div class="row">
           <button id="exportPackActive" type="button">Exporter Pack MJ</button>
-
           <label class="filebtn">
             Importer Pack MJ
             <input id="fileImportPackActive" type="file" accept="application/json,.json">
           </label>
-
           <button id="applyPackAllProfiles" type="button">Appliquer à tous les profils</button>
         </div>
 
         <textarea id="packProfileBox" rows="8" placeholder="Pack MJ (export ou collage)…"></textarea>
 
-       <div class="row right">
+        <div class="row right">
           <button id="clearPackProfileBox" class="danger" type="button">Vider</button>
           <button id="applyPackActive" type="button">Appliquer (profil)</button>
           <button id="applyPackCampaign" type="button">Appliquer (campagne)</button>
@@ -214,12 +199,56 @@
     </section>
 
     <footer class="footnote">
-      <div class="tiny" id="activeProfileHint">PROFIL: -- • LOCAL SAVE • v?</div>
+      <div class="tiny" id="activeProfileHint">PROFIL: -- • — • LOCAL SAVE • v?</div>
     </footer>
+
+    <!-- PROFIL MODAL -->
+    <div id="profileModal" class="modal" aria-hidden="true">
+      <div class="modalBackdrop" id="closeProfileBackdrop"></div>
+
+      <div class="modalPanel" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+        <div class="modalHead">
+          <div>
+            <div class="modalTitle" id="profileModalTitle">PROFIL</div>
+            <div class="tiny" id="profileModalHint">Gestion perso & campagne</div>
+          </div>
+          <button id="closeProfile" class="miniBtn danger" type="button">X</button>
+        </div>
+
+        <div class="modalBody">
+          <div class="card">
+            <h2>Choix du profil</h2>
+            <div class="row">
+              <select id="profileSelect"></select>
+              <button id="newProfile" type="button">Nouveau</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Identité</h2>
+            <div class="row">
+              <input id="profileName" type="text" placeholder="Nom du profil">
+              <input id="profileCampaign" type="text" placeholder="Campagne (ex: ORION)">
+            </div>
+
+            <div class="row right">
+              <button id="saveProfileName" type="button">Sauver</button>
+              <button id="deleteProfile" class="danger" type="button">Supprimer</button>
+            </div>
+
+            <p class="hint">Même “Campagne” = Pack MJ appliqué en masse.</p>
+          </div>
+
+          <div class="row right">
+            <button id="closeProfile2" type="button">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script>
-    const APP_VERSION = "v19";
+    const APP_VERSION = "v20";
 
     // Horloge
     function tick(){
@@ -260,6 +289,35 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
+
+    // ===== MODAL PROFIL =====
+    const openProfileBtn = $("openProfile");
+    const profileModal = $("profileModal");
+    const closeProfileBtn = $("closeProfile");
+    const closeProfileBtn2 = $("closeProfile2");
+    const closeProfileBackdrop = $("closeProfileBackdrop");
+
+    function openProfileModal(){
+      if (!profileModal) return;
+      profileModal.classList.add("show");
+      profileModal.setAttribute("aria-hidden", "false");
+      refreshProfilesUI?.();
+    }
+
+    function closeProfileModal(){
+      if (!profileModal) return;
+      profileModal.classList.remove("show");
+      profileModal.setAttribute("aria-hidden", "true");
+    }
+
+    if (openProfileBtn) openProfileBtn.addEventListener("click", openProfileModal);
+    if (closeProfileBtn) closeProfileBtn.addEventListener("click", closeProfileModal);
+    if (closeProfileBtn2) closeProfileBtn2.addEventListener("click", closeProfileModal);
+    if (closeProfileBackdrop) closeProfileBackdrop.addEventListener("click", closeProfileModal);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeProfileModal();
+    });
 
     // Auto-fit SVG (nom long)
     function fitSvgText(textEl, maxWidth = 760, maxSize = 72, minSize = 28){
@@ -323,7 +381,7 @@
 
       const id = uid();
       const name = "P1";
-      setProfiles([{ id, name, createdAt: new Date().toISOString() }]);
+      setProfiles([{ id, name, campaign: "ORION", createdAt: new Date().toISOString() }]);
       setActiveId(id);
 
       const data = defaultProfileData();
@@ -337,9 +395,10 @@
     // UI profils
     const profileSelect = $("profileSelect");
     const profileName = $("profileName");
+    const profileCampaign = $("profileCampaign");
     const activeHint = $("activeProfileHint");
     const svgName = $("profileNameSvg");
-    const profileCampaign = $("profileCampaign");
+    const profileMiniLine = $("profileMiniLine");
 
     function refreshProfilesUI(){
       const profiles = getProfiles();
@@ -361,6 +420,7 @@
         if (profileName) profileName.value = activeMeta.name;
         if (profileCampaign) profileCampaign.value = activeMeta.campaign || "";
         if (activeHint) activeHint.textContent = `PROFIL: ${activeMeta.name} • ${activeMeta.campaign || "—"} • LOCAL SAVE • ${APP_VERSION}`;
+        if (profileMiniLine) profileMiniLine.textContent = `Campagne: ${activeMeta.campaign || "—"}`;
         if (svgName) {
           svgName.textContent = activeMeta.name;
           svgName.setAttribute("fill", "#b7ffd9");
@@ -726,6 +786,7 @@
       const diag = [
         `PIPBOY ${APP_VERSION}`,
         `Profil: ${(meta && meta.name) ? meta.name : "?"} (${id || "no-id"})`,
+        `Campagne: ${(meta && meta.campaign) ? meta.campaign : "—"}`,
         `Energie: ${data.status?.energy ?? "?"}% | PV: ${data.status?.hp ?? "?"}% | Etat: ${data.status?.state ?? "?"}`,
         `Quetes: EN_COURS ${cEn} | OK ${cOk} | RATEE ${cRa}`,
         `URL: ${location.href}`,
@@ -740,7 +801,7 @@
       }
     });
 
-    // PROFILS: changer / créer / renommer / supprimer
+    // PROFILS: changer / créer / sauvegarder / supprimer
     if (profileSelect) profileSelect.addEventListener("change", () => {
       setActiveId(profileSelect.value);
       loadActiveProfileToUI();
@@ -751,7 +812,6 @@
       const profiles = getProfiles();
       const id = uid();
       const name = `P${profiles.length + 1}`;
-      const profileCampaign = $("profileCampaign");
       profiles.push({ id, name, campaign: "ORION", createdAt: new Date().toISOString() });
       setProfiles(profiles);
       setProfileData(id, defaultProfileData());
@@ -775,6 +835,7 @@
       }
       setProfiles(profiles);
       refreshProfilesUI();
+      loadActiveProfileToUI();
     });
 
     const btnDeleteProfile = $("deleteProfile");
@@ -896,7 +957,7 @@
       if (!id || !backupProfileBox) return;
 
       const profiles = getProfiles();
-      const meta = profiles.find(p => p.id === id) || { id, name: "Profil", createdAt: "" };
+      const meta = profiles.find(p => p.id === id) || { id, name: "Profil", campaign: "", createdAt: "" };
 
       const payload = {
         v: 1,
@@ -974,7 +1035,7 @@
       });
     }
 
-    // ===== PACK MJ (profil actif) =====
+    // ===== PACK MJ =====
     const packProfileBox = $("packProfileBox");
     const btnExportPackActive = $("exportPackActive");
     const btnApplyPackActive = $("applyPackActive");
@@ -999,21 +1060,12 @@
         const obj = Object.assign({ id: uid(), text: "", done: false }, o || {});
         const same = obj.id ? exById.get(obj.id) : null;
         if (same){
-          merged.push({
-            id: obj.id,
-            text: (obj.text ?? same.text ?? ""),
-            done: !!same.done
-          });
+          merged.push({ id: obj.id, text: (obj.text ?? same.text ?? ""), done: !!same.done });
         } else {
-          merged.push({
-            id: obj.id,
-            text: obj.text ?? "",
-            done: !!obj.done
-          });
+          merged.push({ id: obj.id, text: obj.text ?? "", done: !!obj.done });
         }
       }
 
-      // Garde aussi les objectifs existants non mentionnés dans le pack (pas de perte)
       const incIds = new Set(merged.map(x => x.id));
       for (const o of ex){
         if (o && o.id && !incIds.has(o.id)){
@@ -1037,9 +1089,7 @@
             id: q.id,
             title: q.title || same.title,
             status: same.status || q.status || "EN_COURS",
-            // on garde notes joueur si présentes
             notes: (same.notes && String(same.notes).trim().length > 0) ? same.notes : (q.notes || ""),
-            // fusion objectives (garde done existant)
             objectives: mergeObjectives(same.objectives, q.objectives),
             mj: Object.assign({}, same.mj || {}, q.mj || {})
           });
@@ -1048,7 +1098,6 @@
         }
       }
 
-      // Ajoute aussi les quêtes existantes non mentionnées dans le pack (pas de perte)
       const incIds = new Set(merged.map(x => x.id));
       for (const q of ex){
         if (q && q.id && !incIds.has(q.id)){
@@ -1064,7 +1113,7 @@
       if (!id || !packProfileBox) return;
 
       const profiles = getProfiles();
-      const meta = profiles.find(p => p.id === id) || { id, name: "Profil" };
+      const meta = profiles.find(p => p.id === id) || { id, name: "Profil", campaign: "" };
       const data = getProfileData(id);
 
       const payload = {
@@ -1109,63 +1158,10 @@
 
       const data = getProfileData(id);
       data.quests = mergeQuests(data.quests, obj.quests);
-      // briefing: on l’ajoute au journal en haut (sans écraser)
 
-    const btnApplyPackCampaign = $("applyPackCampaign");
-
-    function applyPackCampaign(){
-      const profiles = getProfiles();
-      if (!profiles || profiles.length === 0) return;
-      if (!packProfileBox) return;
-    
-      let obj;
-      try { obj = JSON.parse(packProfileBox.value); }
-      catch { alert("Pack MJ: JSON invalide 😵‍💫"); return; }
-    
-      if (!obj || typeof obj !== "object" || obj.kind !== "pipboy_pack_mj" || !Array.isArray(obj.quests)){
-        alert("Ce JSON n’est pas un Pack MJ PipBoy.");
-        return;
-      }
-    
-      const campaignId = String(obj.campaignId || "").trim();
-      if (!campaignId){
-        alert("Pack MJ: campaignId manquant. (Ex: ORION)");
-        return;
-      }
-    
-      const targets = profiles.filter(p => String(p.campaign || "").trim() === campaignId);
-      if (targets.length === 0){
-        alert(`Aucun profil avec la campagne "${campaignId}".`);
-        return;
-      }
-    
-      const ok = confirm(`Appliquer le Pack MJ campagne "${campaignId}" à ${targets.length} profil(s) ?`);
-      if (!ok) return;
-    
-      for (const p of targets){
-        const data = getProfileData(p.id);
-        data.quests = mergeQuests(data.quests, obj.quests);
-    
-        if (obj.briefing && String(obj.briefing).trim().length > 0){
-          const stamp = new Date().toISOString().slice(0,10);
-          const header = `[PACK MJ ${campaignId} ${stamp}]`;
-          const block = `${header}\n${obj.briefing}\n\n`;
-          data.log = block + (data.log || "");
-        }
-    
-        setProfileData(p.id, data);
-      }
-    
-      loadActiveProfileToUI();
-      alert(`Pack MJ appliqué à la campagne "${campaignId}" ✅`);
-    }
-    
-    if (btnApplyPackCampaign) {
-      btnApplyPackCampaign.addEventListener("click", applyPackCampaign);
-    }
       if (obj.briefing && String(obj.briefing).trim().length > 0){
         const stamp = new Date().toISOString().slice(0,10);
-        const header = `[PACK MJ ${stamp}]`;
+        const header = `[PACK MJ ${obj.campaignId || ""} ${stamp}]`.trim();
         const block = `${header}\n${obj.briefing}\n\n`;
         data.log = block + (data.log || "");
       }
@@ -1174,51 +1170,97 @@
       loadActiveProfileToUI();
       alert("Pack MJ appliqué ✅ (fusion + briefing)");
     }
+
+    // Appliquer à tous les profils
     const btnApplyPackAllProfiles = $("applyPackAllProfiles");
-    
     function applyPackAllProfiles(){
       const profiles = getProfiles();
       if (!profiles || profiles.length === 0) return;
       if (!packProfileBox) return;
-    
+
       let obj;
       try { obj = JSON.parse(packProfileBox.value); }
       catch { alert("Pack MJ: JSON invalide 😵‍💫"); return; }
-    
+
       if (!obj || typeof obj !== "object" || obj.kind !== "pipboy_pack_mj" || !Array.isArray(obj.quests)){
         alert("Ce JSON n’est pas un Pack MJ PipBoy.");
         return;
       }
 
-    const ok = confirm(`Appliquer ce Pack MJ à TOUS les profils de ce téléphone ? (${profiles.length})`);
-    if (!ok) return;
-  
-    for (const p of profiles){
-      const data = getProfileData(p.id);
-      data.quests = mergeQuests(data.quests, obj.quests);
-  
-      if (obj.briefing && String(obj.briefing).trim().length > 0){
-        const stamp = new Date().toISOString().slice(0,10);
-        const header = `[PACK MJ ${stamp}]`;
-        const block = `${header}\n${obj.briefing}\n\n`;
-        data.log = block + (data.log || "");
-      }
-  
-      setProfileData(p.id, data);
-    }
-  
-    loadActiveProfileToUI();
-    alert("Pack MJ appliqué à tous les profils ✅");
-  }
-  
-  if (btnApplyPackAllProfiles) {
-    btnApplyPackAllProfiles.addEventListener("click", applyPackAllProfiles);
-  }
+      const ok = confirm(`Appliquer ce Pack MJ à TOUS les profils de ce téléphone ? (${profiles.length})`);
+      if (!ok) return;
 
-    
+      for (const p of profiles){
+        const data = getProfileData(p.id);
+        data.quests = mergeQuests(data.quests, obj.quests);
+
+        if (obj.briefing && String(obj.briefing).trim().length > 0){
+          const stamp = new Date().toISOString().slice(0,10);
+          const header = `[PACK MJ ${obj.campaignId || ""} ${stamp}]`.trim();
+          const block = `${header}\n${obj.briefing}\n\n`;
+          data.log = block + (data.log || "");
+        }
+
+        setProfileData(p.id, data);
+      }
+
+      loadActiveProfileToUI();
+      alert("Pack MJ appliqué à tous les profils ✅");
+    }
+
+    // Appliquer à la campagne
+    const btnApplyPackCampaign = $("applyPackCampaign");
+    function applyPackCampaign(){
+      const profiles = getProfiles();
+      if (!profiles || profiles.length === 0) return;
+      if (!packProfileBox) return;
+
+      let obj;
+      try { obj = JSON.parse(packProfileBox.value); }
+      catch { alert("Pack MJ: JSON invalide 😵‍💫"); return; }
+
+      if (!obj || typeof obj !== "object" || obj.kind !== "pipboy_pack_mj" || !Array.isArray(obj.quests)){
+        alert("Ce JSON n’est pas un Pack MJ PipBoy.");
+        return;
+      }
+
+      const campaignId = String(obj.campaignId || "").trim();
+      if (!campaignId){
+        alert("Pack MJ: campaignId manquant. (Ex: ORION)");
+        return;
+      }
+
+      const targets = profiles.filter(p => String(p.campaign || "").trim() === campaignId);
+      if (targets.length === 0){
+        alert(`Aucun profil avec la campagne "${campaignId}".`);
+        return;
+      }
+
+      const ok = confirm(`Appliquer le Pack MJ campagne "${campaignId}" à ${targets.length} profil(s) ?`);
+      if (!ok) return;
+
+      for (const p of targets){
+        const data = getProfileData(p.id);
+        data.quests = mergeQuests(data.quests, obj.quests);
+
+        if (obj.briefing && String(obj.briefing).trim().length > 0){
+          const stamp = new Date().toISOString().slice(0,10);
+          const header = `[PACK MJ ${campaignId} ${stamp}]`;
+          const block = `${header}\n${obj.briefing}\n\n`;
+          data.log = block + (data.log || "");
+        }
+
+        setProfileData(p.id, data);
+      }
+
+      loadActiveProfileToUI();
+      alert(`Pack MJ appliqué à la campagne "${campaignId}" ✅`);
+    }
 
     if (btnExportPackActive) btnExportPackActive.addEventListener("click", exportPackActive);
     if (btnApplyPackActive) btnApplyPackActive.addEventListener("click", applyPackActive);
+    if (btnApplyPackAllProfiles) btnApplyPackAllProfiles.addEventListener("click", applyPackAllProfiles);
+    if (btnApplyPackCampaign) btnApplyPackCampaign.addEventListener("click", applyPackCampaign);
     if (btnClearPackProfileBox && packProfileBox) btnClearPackProfileBox.addEventListener("click", () => { packProfileBox.value = ""; });
 
     if (fileImportPackActive) {
@@ -1236,6 +1278,9 @@
         }
       });
     }
+
+    // Export/import active/all buttons already wired earlier
+    // (Keep as-is; handlers defined above)
 
     // Chargement initial
     refreshProfilesUI();
