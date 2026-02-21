@@ -519,20 +519,37 @@
     }
 
     function defaultProfileData(){
-      return {
-        status: { energy: 70, hp: 85, state: "OK" },
-        log: "",
-        inv: [],
-        quests: []
-      };
+  return {
+    
+    log: "",
+    inv: [],
+    quests: [],
+    sheet: {
+      hp20: 10,
+      wounds: "",
+      san20: 10,
+      troubles: "",
+      stats: { for:10, dex:10, end:10, int:10, intu:10 },
+      skills: {}, // { "observer": 45, ... }
+      combat: { ranged: 0, melee: 0, prot: 0, w1:{name:"", dmg:""}, w2:{name:"", dmg:""} },
+      specials: [] // [{id,name,val}]
     }
+  };
+}
 
     function normalizeProfileData(d){
       const base = defaultProfileData();
       const out = Object.assign({}, base, d || {});
-      out.status = Object.assign({}, base.status, (d && d.status) ? d.status : {});
+      
       out.inv = Array.isArray(out.inv) ? out.inv : [];
       out.quests = Array.isArray(out.quests) ? out.quests : [];
+      out.sheet = Object.assign({}, defaultProfileData().sheet, (d && d.sheet) ? d.sheet : {});
+      out.sheet.stats = Object.assign({}, defaultProfileData().sheet.stats, (out.sheet.stats || {}));
+      out.sheet.skills = (out.sheet.skills && typeof out.sheet.skills === "object") ? out.sheet.skills : {};
+      out.sheet.combat = Object.assign({}, defaultProfileData().sheet.combat, (out.sheet.combat || {}));
+      out.sheet.combat.w1 = Object.assign({}, defaultProfileData().sheet.combat.w1, (out.sheet.combat.w1 || {}));
+      out.sheet.combat.w2 = Object.assign({}, defaultProfileData().sheet.combat.w2, (out.sheet.combat.w2 || {}));
+      out.sheet.specials = Array.isArray(out.sheet.specials) ? out.sheet.specials : [];
       return out;
     }
 
@@ -574,6 +591,66 @@
     const activeHint = $("activeProfileHint");
     const svgName = $("profileNameSvg");
     const profileMiniLine = $("profileMiniLine");
+    const SKILLS = [
+      "adaptation",
+      "astrophysique",
+      "mathematiques",
+      "biologie",
+      "geologie",
+      "bricoler",
+      "bidouiller",
+      "comprendre_etrange",
+      "convaincre",
+      "courir_sauter_nager",
+      "deplacement_zero_g",
+      "discretion",
+      "garder_son_calme",
+      "observer",
+      "pilotage",
+      "programmation",
+      "reflexes",
+      "soigner",
+      "survie"
+    ];
+    
+    const SKILLS_LABEL = {
+      adaptation: "Adaptation",
+      astrophysique: "Astrophysique",
+      mathematiques: "Mathématiques",
+      biologie: "Biologie",
+      geologie: "Géologie",
+      bricoler: "Bricoler",
+      bidouiller: "Bidouiller",
+      comprendre_etrange: "Comprendre l’étrange",
+      convaincre: "Convaincre",
+      courir_sauter_nager: "Courir / Sauter / Nager",
+      deplacement_zero_g: "Déplacement en zéro G",
+      discretion: "Discrétion",
+      garder_son_calme: "Garder son calme",
+      observer: "Observer",
+      pilotage: "Pilotage",
+      programmation: "Programmation",
+      reflexes: "Réflexes",
+      soigner: "Soigner",
+      survie: "Survie"
+    };
+
+    function buildSkillsUI(){
+      const box = document.getElementById("skillsGrid");
+      if (!box) return;
+      box.innerHTML = "";
+    
+      SKILLS.forEach(k => {
+        const wrap = document.createElement("label");
+        wrap.className = "field";
+        wrap.innerHTML = `
+          <span>${SKILLS_LABEL[k] || k}</span>
+          <input data-skill="${k}" type="number" min="0" max="100" step="1" value="0">
+        `;
+        box.appendChild(wrap);
+      });
+    }
+    buildSkillsUI();
 
     function refreshProfilesUI(){
       const profiles = getProfiles();
@@ -620,39 +697,46 @@
       fillEl.style.width = `${val}%`;
       labelEl.textContent = `${val}%`;
     }
-
+    
     function loadActiveProfileToUI(){
       const id = ensureActiveProfile();
       if (!id) return;
-
-      const data = getProfileData(id);
-
-      if ($("energy")) $("energy").value = data.status.energy ?? 70;
-      if ($("hp")) $("hp").value = data.status.hp ?? 85;
-      if ($("state")) $("state").value = data.status.state ?? "OK";
-
-      syncBar($("energy"), $("energyFill"), $("energyLabel"));
-      syncBar($("hp"), $("hpFill"), $("hpLabel"));
-
+         
       if ($("log")) $("log").value = data.log ?? "";
-
+      loadSheetToUI(data);
       renderInv();
       renderQuests();
       refreshProfilesUI();
     }
-
+    // Events Fiche PJ
+    ["input","change"].forEach(evt => {
+      const pjHp = document.getElementById("pjHp");
+      const pjSan = document.getElementById("pjSan");
+      if (pjHp) pjHp.addEventListener(evt, () => { sync20(pjHp, document.getElementById("pjHpFill"), document.getElementById("pjHpLabel")); saveSheet(); });
+      if (pjSan) pjSan.addEventListener(evt, () => { sync20(pjSan, document.getElementById("pjSanFill"), document.getElementById("pjSanLabel")); saveSheet(); });
+    
+      ["for","dex","end","int","intu"].forEach(k => {
+        const r = document.getElementById(`stat_${k}`);
+        const v = document.getElementById(`stat_${k}_val`);
+        if (r) r.addEventListener(evt, () => { if (v) v.textContent = r.value; saveSheet(); });
+      });
+    
+      document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
+        inp.addEventListener(evt, saveSheet);
+      });
+    
+      ["combat_ranged","combat_melee","combat_prot","w1_name","w1_dmg","w2_name","w2_dmg","pjWounds","pjTroubles"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(evt, saveSheet);
+      });
+    });
+    
     function saveActiveProfileFromUI(){
       const id = ensureActiveProfile();
       if (!id) return;
 
       const current = getProfileData(id);
-      const energyEl = $("energy"), hpEl = $("hp"), stateEl = $("state"), logEl = $("log");
-
-      const status = {
-        energy: energyEl ? Number(energyEl.value) : (current.status.energy ?? 70),
-        hp: hpEl ? Number(hpEl.value) : (current.status.hp ?? 85),
-        state: stateEl ? stateEl.value : (current.status.state ?? "OK"),
-      };
+     
 
       const updated = {
         status,
@@ -664,6 +748,8 @@
       setProfileData(id, updated);
     }
 
+
+    
     ["input","change"].forEach(evt => {
       const e = $("energy");
       const h = $("hp");
@@ -672,6 +758,132 @@
       if (h) h.addEventListener(evt, () => { syncBar(h, $("hpFill"), $("hpLabel")); saveActiveProfileFromUI(); });
       if (s) s.addEventListener(evt, () => { saveActiveProfileFromUI(); });
     });
+
+    function sync20(rangeEl, fillEl, labelEl){
+      if (!rangeEl || !fillEl || !labelEl) return;
+      const v = Number(rangeEl.value);
+      const pct = Math.round((v/20)*100);
+      fillEl.style.width = `${pct}%`;
+      labelEl.textContent = `${v}/20`;
+    }
+    
+    function loadSheetToUI(data){
+      const sh = data.sheet || defaultProfileData().sheet;
+    
+      // PV/SAN
+      const pjHp = document.getElementById("pjHp");
+      const pjHpFill = document.getElementById("pjHpFill");
+      const pjHpLabel = document.getElementById("pjHpLabel");
+      if (pjHp) pjHp.value = sh.hp20 ?? 10;
+      sync20(pjHp, pjHpFill, pjHpLabel);
+      const wounds = document.getElementById("pjWounds");
+      if (wounds) wounds.value = sh.wounds ?? "";
+    
+      const pjSan = document.getElementById("pjSan");
+      const pjSanFill = document.getElementById("pjSanFill");
+      const pjSanLabel = document.getElementById("pjSanLabel");
+      if (pjSan) pjSan.value = sh.san20 ?? 10;
+      sync20(pjSan, pjSanFill, pjSanLabel);
+      const troubles = document.getElementById("pjTroubles");
+      if (troubles) troubles.value = sh.troubles ?? "";
+    
+      // Stats
+      const setStat = (key) => {
+        const r = document.getElementById(`stat_${key}`);
+        const v = document.getElementById(`stat_${key}_val`);
+        if (r) r.value = sh.stats?.[key] ?? 10;
+        if (v) v.textContent = String(sh.stats?.[key] ?? 10);
+      };
+      ["for","dex","end","int","intu"].forEach(setStat);
+    
+      // Skills
+      const skills = sh.skills || {};
+      document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
+        const k = inp.getAttribute("data-skill");
+        inp.value = Number(skills[k] ?? 0);
+      });
+    
+      // Combat
+      const cr = document.getElementById("combat_ranged");
+      const cm = document.getElementById("combat_melee");
+      const cp = document.getElementById("combat_prot");
+      if (cr) cr.value = Number(sh.combat?.ranged ?? 0);
+      if (cm) cm.value = Number(sh.combat?.melee ?? 0);
+      if (cp) cp.value = Number(sh.combat?.prot ?? 0);
+    
+      const w1n = document.getElementById("w1_name");
+      const w1d = document.getElementById("w1_dmg");
+      const w2n = document.getElementById("w2_name");
+      const w2d = document.getElementById("w2_dmg");
+      if (w1n) w1n.value = sh.combat?.w1?.name ?? "";
+      if (w1d) w1d.value = sh.combat?.w1?.dmg ?? "";
+      if (w2n) w2n.value = sh.combat?.w2?.name ?? "";
+      if (w2d) w2d.value = sh.combat?.w2?.dmg ?? "";
+    
+      renderSpecials(sh.specials || []);
+    }
+    
+    function readSheetFromUI(){
+      const sh = defaultProfileData().sheet;
+    
+      const pjHp = document.getElementById("pjHp");
+      const pjWounds = document.getElementById("pjWounds");
+      const pjSan = document.getElementById("pjSan");
+      const pjTroubles = document.getElementById("pjTroubles");
+    
+      sh.hp20 = pjHp ? Number(pjHp.value) : 10;
+      sh.wounds = pjWounds ? pjWounds.value : "";
+      sh.san20 = pjSan ? Number(pjSan.value) : 10;
+      sh.troubles = pjTroubles ? pjTroubles.value : "";
+    
+      const getStat = (k) => {
+        const r = document.getElementById(`stat_${k}`);
+        return r ? Number(r.value) : 10;
+      };
+      sh.stats = {
+        for: getStat("for"),
+        dex: getStat("dex"),
+        end: getStat("end"),
+        int: getStat("int"),
+        intu: getStat("intu")
+      };
+    
+      const skills = {};
+      document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
+        const k = inp.getAttribute("data-skill");
+        skills[k] = Number(inp.value || 0);
+      });
+      sh.skills = skills;
+    
+      sh.combat = {
+        ranged: Number(document.getElementById("combat_ranged")?.value || 0),
+        melee: Number(document.getElementById("combat_melee")?.value || 0),
+        prot: Number(document.getElementById("combat_prot")?.value || 0),
+        w1: {
+          name: document.getElementById("w1_name")?.value || "",
+          dmg: document.getElementById("w1_dmg")?.value || ""
+        },
+        w2: {
+          name: document.getElementById("w2_name")?.value || "",
+          dmg: document.getElementById("w2_dmg")?.value || ""
+        }
+      };
+    
+      // specials gérés séparément (on garde la liste actuelle)
+      const id = ensureActiveProfile();
+      const data = id ? getProfileData(id) : defaultProfileData();
+      sh.specials = Array.isArray(data.sheet?.specials) ? data.sheet.specials : [];
+    
+      return sh;
+    }
+    
+    function saveSheet(){
+      const id = ensureActiveProfile();
+      if (!id) return;
+      const data = getProfileData(id);
+      data.sheet = readSheetFromUI();
+      setProfileData(id, data);
+    }
 
     // Journal
     const btnSaveLog = $("saveLog");
@@ -1456,8 +1668,63 @@
     }
 
     // Export/import active/all buttons already wired earlier
-    // (Keep as-is; handlers defined above)
 
+
+    function renderSpecials(list){
+      const box = document.getElementById("specList");
+      if (!box) return;
+      box.innerHTML = "";
+    
+      if (!list || list.length === 0){
+        box.innerHTML = `<p class="hint">Aucune compétence spéciale.</p>`;
+        return;
+      }
+    
+      list.forEach(sp => {
+        const row = document.createElement("div");
+        row.className = "specRow";
+        row.innerHTML = `
+          <div>${escapeHtml(sp.name || "")}</div>
+          <div style="text-align:right; font-weight:900;">${Number(sp.val || 0)}%</div>
+          <button class="mini danger" type="button" data-del="${sp.id}">X</button>
+        `;
+        box.appendChild(row);
+      });
+    
+      box.querySelectorAll("button[data-del]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = ensureActiveProfile();
+          if (!id) return;
+          const data = getProfileData(id);
+          const arr = Array.isArray(data.sheet?.specials) ? data.sheet.specials : [];
+          data.sheet.specials = arr.filter(x => x.id !== btn.getAttribute("data-del"));
+          setProfileData(id, data);
+          renderSpecials(data.sheet.specials);
+        });
+      });
+    }
+    
+    const addSpecBtn = document.getElementById("addSpec");
+    if (addSpecBtn){
+      addSpecBtn.addEventListener("click", () => {
+        const name = (document.getElementById("specName")?.value || "").trim();
+        const val = Number(document.getElementById("specVal")?.value || 0);
+        if (!name) return;
+    
+        const id = ensureActiveProfile();
+        if (!id) return;
+        const data = getProfileData(id);
+        data.sheet.specials = Array.isArray(data.sheet?.specials) ? data.sheet.specials : [];
+        data.sheet.specials.unshift({ id: uid(), name, val });
+        setProfileData(id, data);
+    
+        const n = document.getElementById("specName"); if (n) n.value = "";
+        const v = document.getElementById("specVal"); if (v) v.value = "";
+        renderSpecials(data.sheet.specials);
+      });
+    }
+    // (Keep as-is; handlers defined above)
+    
     // Chargement initial
     refreshProfilesUI();
     loadActiveProfileToUI();
