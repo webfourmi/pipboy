@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0b1a12" />
-  <title>Pip-Boy Spatial v21</title>
+  <title>Pip-Boy Spatial v22</title>
 
   <link rel="manifest" href="manifest.json?v=20">
   <link rel="stylesheet" href="style.css" />
@@ -44,34 +44,130 @@
       </div>
 
       <div class="grid">
+        
+        <!-- FICHE PJ -->
         <div class="card">
-          <h2>Énergie</h2>
-          <div class="bar"><div class="barfill" id="energyFill" style="width:70%"></div></div>
-          <div class="row">
-            <input id="energy" type="range" min="0" max="100" value="70">
-            <span id="energyLabel">70%</span>
+          <h2>Fiche PJ</h2>
+        
+          <div class="gridSheet">
+            <!-- PV -->
+            <div class="card sub">
+              <h3>Points de vie</h3>
+              <div class="bar"><div class="barfill" id="pjHpFill" style="width:50%"></div></div>
+              <div class="row">
+                <input id="pjHp" type="range" min="0" max="20" value="10">
+                <span id="pjHpLabel">10/20</span>
+              </div>
+              <textarea id="pjWounds" rows="2" placeholder="Blessures (description)…"></textarea>
+            </div>
+        
+            <!-- SAN -->
+            <div class="card sub">
+              <h3>Santé mentale</h3>
+              <div class="bar"><div class="barfill" id="pjSanFill" style="width:50%"></div></div>
+              <div class="row">
+                <input id="pjSan" type="range" min="0" max="20" value="10">
+                <span id="pjSanLabel">10/20</span>
+              </div>
+              <textarea id="pjTroubles" rows="2" placeholder="Troubles mentaux (description)…"></textarea>
+            </div>
+        
+            <!-- Caractéristiques -->
+            <div class="card sub" style="grid-column: 1 / -1;">
+              <h3>Caractéristiques (0–20)</h3>
+        
+              <div class="statsGrid">
+                <div class="statLine">
+                  <div class="statName">FOR</div>
+                  <input id="stat_for" type="range" min="0" max="20" value="10">
+                  <div class="statVal" id="stat_for_val">10</div>
+                </div>
+        
+                <div class="statLine">
+                  <div class="statName">DEX</div>
+                  <input id="stat_dex" type="range" min="0" max="20" value="10">
+                  <div class="statVal" id="stat_dex_val">10</div>
+                </div>
+        
+                <div class="statLine">
+                  <div class="statName">END</div>
+                  <input id="stat_end" type="range" min="0" max="20" value="10">
+                  <div class="statVal" id="stat_end_val">10</div>
+                </div>
+        
+                <div class="statLine">
+                  <div class="statName">INT</div>
+                  <input id="stat_int" type="range" min="0" max="20" value="10">
+                  <div class="statVal" id="stat_int_val">10</div>
+                </div>
+        
+                <div class="statLine">
+                  <div class="statName">INTU</div>
+                  <input id="stat_intu" type="range" min="0" max="20" value="10">
+                  <div class="statVal" id="stat_intu_val">10</div>
+                </div>
+              </div>
+            </div>
+        
+            <!-- Compétences -->
+            <div class="card sub" style="grid-column: 1 / -1;">
+              <h3>Compétences (%)</h3>
+              <div class="skillsGrid" id="skillsGrid"></div>
+              <p class="hint">Astuce: 0–99 (ou 0–100). On garde simple.</p>
+            </div>
+        
+            <!-- Combat -->
+            <div class="card sub" style="grid-column: 1 / -1;">
+              <h3>Combat</h3>
+              <div class="combatGrid">
+                <label class="field">
+                  <span>Combat à distance (%)</span>
+                  <input id="combat_ranged" type="number" min="0" max="100" step="1" value="0">
+                </label>
+        
+                <label class="field">
+                  <span>Combat au corps à corps (%)</span>
+                  <input id="combat_melee" type="number" min="0" max="100" step="1" value="0">
+                </label>
+        
+                <label class="field">
+                  <span>Protection</span>
+                  <input id="combat_prot" type="number" min="0" max="99" step="1" value="0">
+                </label>
+              </div>
+        
+              <div class="weaponsGrid">
+                <div class="weaponCard">
+                  <div class="tiny">ARME 1</div>
+                  <input id="w1_name" type="text" placeholder="Nom">
+                  <input id="w1_dmg" type="text" placeholder="Dégâts (ex: 1d6+2)">
+                </div>
+        
+                <div class="weaponCard">
+                  <div class="tiny">ARME 2</div>
+                  <input id="w2_name" type="text" placeholder="Nom">
+                  <input id="w2_dmg" type="text" placeholder="Dégâts (ex: 2d8)">
+                </div>
+              </div>
+            </div>
+        
+            <!-- Compétences spéciales -->
+            <div class="card sub" style="grid-column: 1 / -1;">
+              <h3>Compétences spéciales (%)</h3>
+        
+              <div class="row">
+                <input id="specName" type="text" placeholder="Nom (ex: Cryptage ancien)">
+                <input id="specVal" type="number" min="0" max="100" step="1" placeholder="%">
+                <button id="addSpec" type="button">Ajouter</button>
+              </div>
+        
+              <div id="specList" class="specList"></div>
+              <p class="hint">Ajoute au fil des sessions.</p>
+            </div>
+        
           </div>
         </div>
-
-        <div class="card">
-          <h2>PV</h2>
-          <div class="bar"><div class="barfill" id="hpFill" style="width:85%"></div></div>
-          <div class="row">
-            <input id="hp" type="range" min="0" max="100" value="85">
-            <span id="hpLabel">85%</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>État</h2>
-          <select id="state">
-            <option>OK</option>
-            <option>FATIGUÉ</option>
-            <option>BLESSÉ</option>
-            <option>CRITIQUE</option>
-          </select>
-          <p class="hint">Sauvegarde locale automatique.</p>
-        </div>
+        
       </div>
     </section>
 
