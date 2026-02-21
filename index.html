@@ -335,7 +335,18 @@
     if (closeProfileBackdrop) closeProfileBackdrop.addEventListener("click", closeProfileModal);
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeProfileModal();
+      if (e.key !== "Escape") return;
+    
+      // ferme d'abord Import/Export si ouvert
+      if (ioModal && ioModal.classList.contains("show")) {
+        closeIOModal();
+        return;
+      }
+    
+      // sinon ferme Profil si ouvert
+      if (profileModal && profileModal.classList.contains("show")) {
+        closeProfileModal();
+      }
     });
 
    // ===== MODAL IMPORT/EXPORT =====
@@ -348,6 +359,7 @@
     if (!ioModal) return;
     ioModal.classList.add("show");
     ioModal.setAttribute("aria-hidden", "false");
+    refreshProfilesUI?.();
   }
   
   function closeIOModal(){
