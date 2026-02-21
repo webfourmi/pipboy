@@ -1,3 +1,4 @@
+```html
 <!doctype html>
 <html lang="fr">
 <head>
@@ -6,7 +7,7 @@
   <meta name="theme-color" content="#0b1a12" />
   <title>Pip-Boy Spatial v22</title>
 
-  <link rel="manifest" href="manifest.json?v=20">
+  <link rel="manifest" href="manifest.json?v=22">
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="icons/favicon.ico">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -16,11 +17,11 @@
   <header class="topbar">
     <div class="brand">PIP-BOY // ORION</div>
 
-   <div class="topbarActions">
-    <button id="openProfile" class="miniBtn" type="button">PROFIL</button>
-    <button id="openIO" class="miniBtn" type="button">IMPORT/EXPORT</button>
-    <div class="clock" id="clock">--:--</div>
-   </div>
+    <div class="topbarActions">
+      <button id="openProfile" class="miniBtn" type="button">PROFIL</button>
+      <button id="openIO" class="miniBtn" type="button">IMPORT/EXPORT</button>
+      <div class="clock" id="clock">--:--</div>
+    </div>
   </header>
 
   <main class="shell">
@@ -32,7 +33,7 @@
 
     <!-- STATUS -->
     <section class="view active" id="status">
-      <h1>STATUT</h1>
+      <h1>STATUS</h1>
 
       <div class="card">
         <h2>Identité</h2>
@@ -43,131 +44,127 @@
         <p class="hint">Modifier via le bouton PROFIL.</p>
       </div>
 
-      <div class="grid">
-        
-        <!-- FICHE PJ -->
-        <div class="card">
-          <h2>Fiche PJ</h2>
-        
-          <div class="gridSheet">
-            <!-- PV -->
-            <div class="card sub">
-              <h3>Points de vie</h3>
-              <div class="bar"><div class="barfill" id="pjHpFill" style="width:50%"></div></div>
-              <div class="row">
-                <input id="pjHp" type="range" min="0" max="20" value="10">
-                <span id="pjHpLabel">10/20</span>
-              </div>
-              <textarea id="pjWounds" rows="2" placeholder="Blessures (description)…"></textarea>
+      <!-- FICHE PJ -->
+      <div class="card">
+        <h2>Fiche PJ</h2>
+
+        <div class="gridSheet">
+          <!-- PV -->
+          <div class="card sub">
+            <h3>Points de vie</h3>
+            <div class="bar"><div class="barfill" id="pjHpFill" style="width:50%"></div></div>
+            <div class="row">
+              <input id="pjHp" type="range" min="0" max="20" value="10">
+              <span id="pjHpLabel">10/20</span>
             </div>
-        
-            <!-- SAN -->
-            <div class="card sub">
-              <h3>Santé mentale</h3>
-              <div class="bar"><div class="barfill" id="pjSanFill" style="width:50%"></div></div>
-              <div class="row">
-                <input id="pjSan" type="range" min="0" max="20" value="10">
-                <span id="pjSanLabel">10/20</span>
-              </div>
-              <textarea id="pjTroubles" rows="2" placeholder="Troubles mentaux (description)…"></textarea>
-            </div>
-        
-            <!-- Caractéristiques -->
-            <div class="card sub" style="grid-column: 1 / -1;">
-              <h3>Caractéristiques (0–20)</h3>
-        
-              <div class="statsGrid">
-                <div class="statLine">
-                  <div class="statName">FOR</div>
-                  <input id="stat_for" type="range" min="0" max="20" value="10">
-                  <div class="statVal" id="stat_for_val">10</div>
-                </div>
-        
-                <div class="statLine">
-                  <div class="statName">DEX</div>
-                  <input id="stat_dex" type="range" min="0" max="20" value="10">
-                  <div class="statVal" id="stat_dex_val">10</div>
-                </div>
-        
-                <div class="statLine">
-                  <div class="statName">END</div>
-                  <input id="stat_end" type="range" min="0" max="20" value="10">
-                  <div class="statVal" id="stat_end_val">10</div>
-                </div>
-        
-                <div class="statLine">
-                  <div class="statName">INT</div>
-                  <input id="stat_int" type="range" min="0" max="20" value="10">
-                  <div class="statVal" id="stat_int_val">10</div>
-                </div>
-        
-                <div class="statLine">
-                  <div class="statName">INTU</div>
-                  <input id="stat_intu" type="range" min="0" max="20" value="10">
-                  <div class="statVal" id="stat_intu_val">10</div>
-                </div>
-              </div>
-            </div>
-        
-            <!-- Compétences -->
-            <div class="card sub" style="grid-column: 1 / -1;">
-              <h3>Compétences (%)</h3>
-              <div class="skillsGrid" id="skillsGrid"></div>
-              <p class="hint">Astuce: 0–99 (ou 0–100). On garde simple.</p>
-            </div>
-        
-            <!-- Combat -->
-            <div class="card sub" style="grid-column: 1 / -1;">
-              <h3>Combat</h3>
-              <div class="combatGrid">
-                <label class="field">
-                  <span>Combat à distance (%)</span>
-                  <input id="combat_ranged" type="number" min="0" max="100" step="1" value="0">
-                </label>
-        
-                <label class="field">
-                  <span>Combat au corps à corps (%)</span>
-                  <input id="combat_melee" type="number" min="0" max="100" step="1" value="0">
-                </label>
-        
-                <label class="field">
-                  <span>Protection</span>
-                  <input id="combat_prot" type="number" min="0" max="99" step="1" value="0">
-                </label>
-              </div>
-        
-              <div class="weaponsGrid">
-                <div class="weaponCard">
-                  <div class="tiny">ARME 1</div>
-                  <input id="w1_name" type="text" placeholder="Nom">
-                  <input id="w1_dmg" type="text" placeholder="Dégâts (ex: 1d6+2)">
-                </div>
-        
-                <div class="weaponCard">
-                  <div class="tiny">ARME 2</div>
-                  <input id="w2_name" type="text" placeholder="Nom">
-                  <input id="w2_dmg" type="text" placeholder="Dégâts (ex: 2d8)">
-                </div>
-              </div>
-            </div>
-        
-            <!-- Compétences spéciales -->
-            <div class="card sub" style="grid-column: 1 / -1;">
-              <h3>Compétences spéciales (%)</h3>
-        
-              <div class="row">
-                <input id="specName" type="text" placeholder="Nom (ex: Cryptage ancien)">
-                <input id="specVal" type="number" min="0" max="100" step="1" placeholder="%">
-                <button id="addSpec" type="button">Ajouter</button>
-              </div>
-        
-              <div id="specList" class="specList"></div>
-              <p class="hint">Ajoute au fil des sessions.</p>
-            </div>
-        
+            <textarea id="pjWounds" rows="2" placeholder="Blessures (description)…"></textarea>
           </div>
+
+          <!-- SAN -->
+          <div class="card sub">
+            <h3>Santé mentale</h3>
+            <div class="bar"><div class="barfill" id="pjSanFill" style="width:50%"></div></div>
+            <div class="row">
+              <input id="pjSan" type="range" min="0" max="20" value="10">
+              <span id="pjSanLabel">10/20</span>
+            </div>
+            <textarea id="pjTroubles" rows="2" placeholder="Troubles mentaux (description)…"></textarea>
+          </div>
+
+          <!-- Caractéristiques -->
+          <div class="card sub" style="grid-column: 1 / -1;">
+            <h3>Caractéristiques (0–20)</h3>
+
+            <div class="statsGrid">
+              <div class="statLine">
+                <div class="statName">FOR</div>
+                <input id="stat_for" type="range" min="0" max="20" value="10">
+                <div class="statVal" id="stat_for_val">10</div>
+              </div>
+
+              <div class="statLine">
+                <div class="statName">DEX</div>
+                <input id="stat_dex" type="range" min="0" max="20" value="10">
+                <div class="statVal" id="stat_dex_val">10</div>
+              </div>
+
+              <div class="statLine">
+                <div class="statName">END</div>
+                <input id="stat_end" type="range" min="0" max="20" value="10">
+                <div class="statVal" id="stat_end_val">10</div>
+              </div>
+
+              <div class="statLine">
+                <div class="statName">INT</div>
+                <input id="stat_int" type="range" min="0" max="20" value="10">
+                <div class="statVal" id="stat_int_val">10</div>
+              </div>
+
+              <div class="statLine">
+                <div class="statName">INTU</div>
+                <input id="stat_intu" type="range" min="0" max="20" value="10">
+                <div class="statVal" id="stat_intu_val">10</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Compétences -->
+          <div class="card sub" style="grid-column: 1 / -1;">
+            <h3>Compétences (%)</h3>
+            <div class="skillsGrid" id="skillsGrid"></div>
+            <p class="hint">0–100. Simple et efficace.</p>
+          </div>
+
+          <!-- Combat -->
+          <div class="card sub" style="grid-column: 1 / -1;">
+            <h3>Combat</h3>
+            <div class="combatGrid">
+              <label class="field">
+                <span>Combat à distance (%)</span>
+                <input id="combat_ranged" type="number" min="0" max="100" step="1" value="0">
+              </label>
+
+              <label class="field">
+                <span>Combat au corps à corps (%)</span>
+                <input id="combat_melee" type="number" min="0" max="100" step="1" value="0">
+              </label>
+
+              <label class="field">
+                <span>Protection</span>
+                <input id="combat_prot" type="number" min="0" max="99" step="1" value="0">
+              </label>
+            </div>
+
+            <div class="weaponsGrid">
+              <div class="weaponCard">
+                <div class="tiny">ARME 1</div>
+                <input id="w1_name" type="text" placeholder="Nom">
+                <input id="w1_dmg" type="text" placeholder="Dégâts (ex: 1d6+2)">
+              </div>
+
+              <div class="weaponCard">
+                <div class="tiny">ARME 2</div>
+                <input id="w2_name" type="text" placeholder="Nom">
+                <input id="w2_dmg" type="text" placeholder="Dégâts (ex: 2d8)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Compétences spéciales -->
+          <div class="card sub" style="grid-column: 1 / -1;">
+            <h3>Compétences spéciales (%)</h3>
+
+            <div class="row">
+              <input id="specName" type="text" placeholder="Nom (ex: Cryptage ancien)">
+              <input id="specVal" type="number" min="0" max="100" step="1" placeholder="%">
+              <button id="addSpec" type="button">Ajouter</button>
+            </div>
+
+            <div id="specList" class="specList"></div>
+            <p class="hint">Ajout au fil des sessions.</p>
+          </div>
+
         </div>
-        
       </div>
     </section>
 
@@ -186,7 +183,7 @@
 
       <!-- QUÊTES -->
       <div class="card">
-       <div class="row" style="align-items:center; justify-content:space-between; gap:10px;">
+        <div class="row" style="align-items:center; justify-content:space-between; gap:10px;">
           <h2 style="margin:0;">Quêtes</h2>
         </div>
         <p class="hint">Vue tableau: EN COURS en haut, puis OK, puis RATÉE.</p>
@@ -210,7 +207,6 @@
         <div id="questCounts" class="tiny"></div>
         <div id="quests" class="questList"></div>
       </div>
-
     </section>
 
     <!-- INV -->
@@ -237,7 +233,6 @@
     </footer>
 
     <!-- PROFIL MODAL -->
-    
     <div id="profileModal" class="modal" aria-hidden="true">
       <div class="modalBackdrop" id="closeProfileBackdrop"></div>
 
@@ -273,15 +268,14 @@
 
             <p class="hint">Même “Campagne” = Pack MJ appliqué en masse.</p>
           </div>
-
-          
         </div>
       </div>
     </div>
+
     <!-- IMPORT/EXPORT MODAL -->
     <div id="ioModal" class="modal" aria-hidden="true">
       <div class="modalBackdrop" id="closeIOBackdrop"></div>
-    
+
       <div class="modalPanel" role="dialog" aria-modal="true" aria-labelledby="ioModalTitle">
         <div class="modalHead">
           <div>
@@ -290,8 +284,9 @@
           </div>
           <button id="closeIO" class="miniBtn" type="button">FERMER</button>
         </div>
-    
+
         <div class="modalBody">
+
           <div class="card">
             <h2>Support</h2>
             <p class="hint">À coller au MJ en cas de souci (version, campagne, quêtes…).</p>
@@ -299,11 +294,12 @@
               <button id="copyDiag" type="button">Copier diagnostic</button>
             </div>
           </div>
-          <!-- SAUVEGARDE (ex-DATA) -->
+
+          <!-- SAUVEGARDE -->
           <div class="card">
             <h2>Sauvegarde</h2>
             <p class="hint">Exporter/Importer tous les profils (et le profil actif).</p>
-    
+
             <div class="row">
               <button id="exportAll" type="button">Exporter JSON</button>
               <label class="filebtn">
@@ -311,19 +307,19 @@
                 <input id="fileImport" type="file" accept="application/json,.json">
               </label>
             </div>
-    
+
             <textarea id="backupBox" rows="8" placeholder="JSON ici… (export ou collage)"></textarea>
-    
+
             <div class="row right">
               <button id="clearBox" class="danger" type="button">Vider</button>
               <button id="applyImport" type="button">Appliquer l’import</button>
             </div>
-    
+
             <hr class="sep">
-    
+
             <h2>Profil actif</h2>
             <p class="hint">Exporter/importer uniquement le profil sélectionné.</p>
-    
+
             <div class="row">
               <button id="exportActive" type="button">Exporter ce profil</button>
               <label class="filebtn">
@@ -331,19 +327,19 @@
                 <input id="fileImportActive" type="file" accept="application/json,.json">
               </label>
             </div>
-    
+
             <textarea id="backupProfileBox" rows="8" placeholder="JSON du profil actif (export ou collage)…"></textarea>
-    
+
             <div class="row right">
               <button id="clearProfileBox" class="danger" type="button">Vider</button>
               <button id="applyImportActive" type="button">Appliquer sur ce profil</button>
             </div>
-    
+
             <hr class="sep">
-    
+
             <h2>Pack MJ (profil actif)</h2>
             <p class="hint">Exporter/importer un pack MJ. Import = fusion intelligente (garde coches/notes si possible).</p>
-    
+
             <div class="row">
               <button id="exportPackActive" type="button">Exporter Pack MJ</button>
               <label class="filebtn">
@@ -352,23 +348,24 @@
               </label>
               <button id="applyPackAllProfiles" type="button">Appliquer à tous les profils</button>
             </div>
-    
+
             <textarea id="packProfileBox" rows="8" placeholder="Pack MJ (export ou collage)…"></textarea>
-    
+
             <div class="row right">
               <button id="clearPackProfileBox" class="danger" type="button">Vider</button>
               <button id="applyPackActive" type="button">Appliquer (profil)</button>
               <button id="applyPackCampaign" type="button">Appliquer (campagne)</button>
             </div>
           </div>
-    
+
         </div>
       </div>
     </div>
+
   </main>
 
   <script>
-    const APP_VERSION = "v20";
+    const APP_VERSION = "v22";
 
     // Horloge
     function tick(){
@@ -410,11 +407,10 @@
         .replaceAll("'","&#039;");
     }
 
-    // ===== MODAL PROFIL =====
+    // ===== MODALS =====
     const openProfileBtn = $("openProfile");
     const profileModal = $("profileModal");
     const closeProfileBtn = $("closeProfile");
-   
     const closeProfileBackdrop = $("closeProfileBackdrop");
 
     function openProfileModal(){
@@ -423,7 +419,6 @@
       profileModal.setAttribute("aria-hidden", "false");
       refreshProfilesUI?.();
     }
-
     function closeProfileModal(){
       if (!profileModal) return;
       profileModal.classList.remove("show");
@@ -432,68 +427,36 @@
 
     if (openProfileBtn) openProfileBtn.addEventListener("click", openProfileModal);
     if (closeProfileBtn) closeProfileBtn.addEventListener("click", closeProfileModal);
-   
     if (closeProfileBackdrop) closeProfileBackdrop.addEventListener("click", closeProfileModal);
 
+    const openIOBtn = $("openIO");
+    const ioModal = $("ioModal");
+    const closeIOBtn = $("closeIO");
+    const closeIOBackdrop = $("closeIOBackdrop");
+
+    function openIOModal(){
+      if (!ioModal) return;
+      ioModal.classList.add("show");
+      ioModal.setAttribute("aria-hidden", "false");
+      refreshProfilesUI?.();
+    }
+    function closeIOModal(){
+      if (!ioModal) return;
+      ioModal.classList.remove("show");
+      ioModal.setAttribute("aria-hidden", "true");
+    }
+
+    if (openIOBtn) openIOBtn.addEventListener("click", openIOModal);
+    if (closeIOBtn) closeIOBtn.addEventListener("click", closeIOModal);
+    if (closeIOBackdrop) closeIOBackdrop.addEventListener("click", closeIOModal);
+
+    // ESC: ferme IO d'abord, sinon Profil
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
-    
-      // ferme d'abord Import/Export si ouvert
-      if (ioModal && ioModal.classList.contains("show")) {
-        closeIOModal();
-        return;
-      }
-    
-      // sinon ferme Profil si ouvert
-      if (profileModal && profileModal.classList.contains("show")) {
-        closeProfileModal();
-      }
+      if (ioModal && ioModal.classList.contains("show")) { closeIOModal(); return; }
+      if (profileModal && profileModal.classList.contains("show")) closeProfileModal();
     });
 
-   // ===== MODAL IMPORT/EXPORT =====
-  const openIOBtn = $("openIO");
-  const ioModal = $("ioModal");
-  const closeIOBtn = $("closeIO");
-  const closeIOBackdrop = $("closeIOBackdrop");
-  
-  function openIOModal(){
-    if (!ioModal) return;
-    ioModal.classList.add("show");
-    ioModal.setAttribute("aria-hidden", "false");
-    refreshProfilesUI?.();
-  }
-  
-  function closeIOModal(){
-    if (!ioModal) return;
-    ioModal.classList.remove("show");
-    ioModal.setAttribute("aria-hidden", "true");
-  }
-  
-  if (openIOBtn) openIOBtn.addEventListener("click", openIOModal);
-  if (closeIOBtn) closeIOBtn.addEventListener("click", closeIOModal);
-  if (closeIOBackdrop) closeIOBackdrop.addEventListener("click", closeIOModal);
-  
-  // ESC: ferme IO si ouvert, sinon ferme Profil
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape") return;
-  
-    // ferme d'abord Import/Export si ouvert
-    const io = document.getElementById("ioModal");
-    if (io && io.classList.contains("show")) {
-      io.classList.remove("show");
-      io.setAttribute("aria-hidden", "true");
-      return;
-    }
-  
-    // sinon ferme Profil si ouvert
-    const pm = document.getElementById("profileModal");
-    if (pm && pm.classList.contains("show")) {
-      pm.classList.remove("show");
-      pm.setAttribute("aria-hidden", "true");
-    }
-  });
-        
-    
     // Auto-fit SVG (nom long)
     function fitSvgText(textEl, maxWidth = 760, maxSize = 72, minSize = 28){
       if (!textEl) return;
@@ -510,7 +473,7 @@
       }
     }
 
-    // MULTI-PROFILS
+    // ===== MULTI-PROFILS =====
     const PROFILES_KEY = "pipboy_profiles";
     const ACTIVE_KEY = "pipboy_active_profile";
 
@@ -519,37 +482,40 @@
     }
 
     function defaultProfileData(){
-  return {
-    
-    log: "",
-    inv: [],
-    quests: [],
-    sheet: {
-      hp20: 10,
-      wounds: "",
-      san20: 10,
-      troubles: "",
-      stats: { for:10, dex:10, end:10, int:10, intu:10 },
-      skills: {}, // { "observer": 45, ... }
-      combat: { ranged: 0, melee: 0, prot: 0, w1:{name:"", dmg:""}, w2:{name:"", dmg:""} },
-      specials: [] // [{id,name,val}]
+      return {
+        log: "",
+        inv: [],
+        quests: [],
+        sheet: {
+          hp20: 10,
+          wounds: "",
+          san20: 10,
+          troubles: "",
+          stats: { for:10, dex:10, end:10, int:10, intu:10 },
+          skills: {},
+          combat: { ranged: 0, melee: 0, prot: 0, w1:{name:"", dmg:""}, w2:{name:"", dmg:""} },
+          specials: []
+        }
+      };
     }
-  };
-}
 
     function normalizeProfileData(d){
       const base = defaultProfileData();
       const out = Object.assign({}, base, d || {});
-      
       out.inv = Array.isArray(out.inv) ? out.inv : [];
       out.quests = Array.isArray(out.quests) ? out.quests : [];
-      out.sheet = Object.assign({}, defaultProfileData().sheet, (d && d.sheet) ? d.sheet : {});
-      out.sheet.stats = Object.assign({}, defaultProfileData().sheet.stats, (out.sheet.stats || {}));
+      out.log = (typeof out.log === "string") ? out.log : "";
+
+      out.sheet = Object.assign({}, base.sheet, (d && d.sheet) ? d.sheet : {});
+      out.sheet.stats = Object.assign({}, base.sheet.stats, (out.sheet.stats || {}));
       out.sheet.skills = (out.sheet.skills && typeof out.sheet.skills === "object") ? out.sheet.skills : {};
-      out.sheet.combat = Object.assign({}, defaultProfileData().sheet.combat, (out.sheet.combat || {}));
-      out.sheet.combat.w1 = Object.assign({}, defaultProfileData().sheet.combat.w1, (out.sheet.combat.w1 || {}));
-      out.sheet.combat.w2 = Object.assign({}, defaultProfileData().sheet.combat.w2, (out.sheet.combat.w2 || {}));
+      out.sheet.combat = Object.assign({}, base.sheet.combat, (out.sheet.combat || {}));
+      out.sheet.combat.w1 = Object.assign({}, base.sheet.combat.w1, (out.sheet.combat.w1 || {}));
+      out.sheet.combat.w2 = Object.assign({}, base.sheet.combat.w2, (out.sheet.combat.w2 || {}));
       out.sheet.specials = Array.isArray(out.sheet.specials) ? out.sheet.specials : [];
+      out.sheet.hp20 = Number.isFinite(+out.sheet.hp20) ? +out.sheet.hp20 : 10;
+      out.sheet.san20 = Number.isFinite(+out.sheet.san20) ? +out.sheet.san20 : 10;
+
       return out;
     }
 
@@ -562,24 +528,22 @@
     function setProfileData(id, data){ store.set(profileKey(id), normalizeProfileData(data)); }
     function deleteProfileData(id){ store.del(profileKey(id)); }
 
-    // Migration ancien format -> profil P1
+    // Migration ancien format -> profil P1 (log/inv/quests uniquement)
     function migrateIfNeeded(){
       const profiles = getProfiles();
       if (profiles.length > 0) return;
 
-      const oldStatus = store.get("status", null);
       const oldLog = store.get("log", null);
       const oldInv = store.get("inv", null);
 
       const id = uid();
-      const name = "P1";
-      setProfiles([{ id, name, campaign: "ORION", createdAt: new Date().toISOString() }]);
+      setProfiles([{ id, name: "P1", campaign: "ORION", createdAt: new Date().toISOString() }]);
       setActiveId(id);
 
       const data = defaultProfileData();
-      if (oldStatus) data.status = oldStatus;
       if (typeof oldLog === "string") data.log = oldLog;
       if (Array.isArray(oldInv)) data.inv = oldInv;
+
       setProfileData(id, data);
     }
     migrateIfNeeded();
@@ -591,66 +555,6 @@
     const activeHint = $("activeProfileHint");
     const svgName = $("profileNameSvg");
     const profileMiniLine = $("profileMiniLine");
-    const SKILLS = [
-      "adaptation",
-      "astrophysique",
-      "mathematiques",
-      "biologie",
-      "geologie",
-      "bricoler",
-      "bidouiller",
-      "comprendre_etrange",
-      "convaincre",
-      "courir_sauter_nager",
-      "deplacement_zero_g",
-      "discretion",
-      "garder_son_calme",
-      "observer",
-      "pilotage",
-      "programmation",
-      "reflexes",
-      "soigner",
-      "survie"
-    ];
-    
-    const SKILLS_LABEL = {
-      adaptation: "Adaptation",
-      astrophysique: "Astrophysique",
-      mathematiques: "Mathématiques",
-      biologie: "Biologie",
-      geologie: "Géologie",
-      bricoler: "Bricoler",
-      bidouiller: "Bidouiller",
-      comprendre_etrange: "Comprendre l’étrange",
-      convaincre: "Convaincre",
-      courir_sauter_nager: "Courir / Sauter / Nager",
-      deplacement_zero_g: "Déplacement en zéro G",
-      discretion: "Discrétion",
-      garder_son_calme: "Garder son calme",
-      observer: "Observer",
-      pilotage: "Pilotage",
-      programmation: "Programmation",
-      reflexes: "Réflexes",
-      soigner: "Soigner",
-      survie: "Survie"
-    };
-
-    function buildSkillsUI(){
-      const box = document.getElementById("skillsGrid");
-      if (!box) return;
-      box.innerHTML = "";
-    
-      SKILLS.forEach(k => {
-        const wrap = document.createElement("label");
-        wrap.className = "field";
-        wrap.innerHTML = `
-          <span>${SKILLS_LABEL[k] || k}</span>
-          <input data-skill="${k}" type="number" min="0" max="100" step="1" value="0">
-        `;
-        box.appendChild(wrap);
-      });
-    }
-    buildSkillsUI();
 
     function refreshProfilesUI(){
       const profiles = getProfiles();
@@ -691,73 +595,66 @@
       return activeId;
     }
 
-    function syncBar(rangeEl, fillEl, labelEl){
-      if (!rangeEl || !fillEl || !labelEl) return;
-      const val = Number(rangeEl.value);
-      fillEl.style.width = `${val}%`;
-      labelEl.textContent = `${val}%`;
-    }
-    
-    function loadActiveProfileToUI(){
-      const id = ensureActiveProfile();
-      if (!id) return;
-         
-      if ($("log")) $("log").value = data.log ?? "";
-      loadSheetToUI(data);
-      renderInv();
-      renderQuests();
-      refreshProfilesUI();
-    }
-    // Events Fiche PJ
-    ["input","change"].forEach(evt => {
-      const pjHp = document.getElementById("pjHp");
-      const pjSan = document.getElementById("pjSan");
-      if (pjHp) pjHp.addEventListener(evt, () => { sync20(pjHp, document.getElementById("pjHpFill"), document.getElementById("pjHpLabel")); saveSheet(); });
-      if (pjSan) pjSan.addEventListener(evt, () => { sync20(pjSan, document.getElementById("pjSanFill"), document.getElementById("pjSanLabel")); saveSheet(); });
-    
-      ["for","dex","end","int","intu"].forEach(k => {
-        const r = document.getElementById(`stat_${k}`);
-        const v = document.getElementById(`stat_${k}_val`);
-        if (r) r.addEventListener(evt, () => { if (v) v.textContent = r.value; saveSheet(); });
+    // ===== FICHE PJ =====
+    const SKILLS = [
+      "adaptation",
+      "astrophysique",
+      "mathematiques",
+      "biologie",
+      "geologie",
+      "bricoler",
+      "bidouiller",
+      "comprendre_etrange",
+      "convaincre",
+      "courir_sauter_nager",
+      "deplacement_zero_g",
+      "discretion",
+      "garder_son_calme",
+      "observer",
+      "pilotage",
+      "programmation",
+      "reflexes",
+      "soigner",
+      "survie"
+    ];
+
+    const SKILLS_LABEL = {
+      adaptation: "Adaptation",
+      astrophysique: "Astrophysique",
+      mathematiques: "Mathématiques",
+      biologie: "Biologie",
+      geologie: "Géologie",
+      bricoler: "Bricoler",
+      bidouiller: "Bidouiller",
+      comprendre_etrange: "Comprendre l’étrange",
+      convaincre: "Convaincre",
+      courir_sauter_nager: "Courir / Sauter / Nager",
+      deplacement_zero_g: "Déplacement en zéro G",
+      discretion: "Discrétion",
+      garder_son_calme: "Garder son calme",
+      observer: "Observer",
+      pilotage: "Pilotage",
+      programmation: "Programmation",
+      reflexes: "Réflexes",
+      soigner: "Soigner",
+      survie: "Survie"
+    };
+
+    function buildSkillsUI(){
+      const box = $("skillsGrid");
+      if (!box) return;
+      box.innerHTML = "";
+      SKILLS.forEach(k => {
+        const wrap = document.createElement("label");
+        wrap.className = "field";
+        wrap.innerHTML = `
+          <span>${SKILLS_LABEL[k] || k}</span>
+          <input data-skill="${k}" type="number" min="0" max="100" step="1" value="0">
+        `;
+        box.appendChild(wrap);
       });
-    
-      document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
-        inp.addEventListener(evt, saveSheet);
-      });
-    
-      ["combat_ranged","combat_melee","combat_prot","w1_name","w1_dmg","w2_name","w2_dmg","pjWounds","pjTroubles"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener(evt, saveSheet);
-      });
-    });
-    
-    function saveActiveProfileFromUI(){
-      const id = ensureActiveProfile();
-      if (!id) return;
-
-      const current = getProfileData(id);
-     
-
-      const updated = {
-        status,
-        log: logEl ? logEl.value : (current.log ?? ""),
-        inv: current.inv ?? [],
-        quests: current.quests ?? []
-      };
-
-      setProfileData(id, updated);
     }
-
-
-    
-    ["input","change"].forEach(evt => {
-      const e = $("energy");
-      const h = $("hp");
-      const s = $("state");
-      if (e) e.addEventListener(evt, () => { syncBar(e, $("energyFill"), $("energyLabel")); saveActiveProfileFromUI(); });
-      if (h) h.addEventListener(evt, () => { syncBar(h, $("hpFill"), $("hpLabel")); saveActiveProfileFromUI(); });
-      if (s) s.addEventListener(evt, () => { saveActiveProfileFromUI(); });
-    });
+    buildSkillsUI();
 
     function sync20(rangeEl, fillEl, labelEl){
       if (!rangeEl || !fillEl || !labelEl) return;
@@ -766,80 +663,92 @@
       fillEl.style.width = `${pct}%`;
       labelEl.textContent = `${v}/20`;
     }
-    
+
+    function renderSpecials(list){
+      const box = $("specList");
+      if (!box) return;
+      box.innerHTML = "";
+
+      if (!list || list.length === 0){
+        box.innerHTML = `<p class="hint">Aucune compétence spéciale.</p>`;
+        return;
+      }
+
+      list.forEach(sp => {
+        const row = document.createElement("div");
+        row.className = "specRow";
+        row.innerHTML = `
+          <div>${escapeHtml(sp.name || "")}</div>
+          <div style="text-align:right; font-weight:900;">${Number(sp.val || 0)}%</div>
+          <button class="mini danger" type="button" data-del="${sp.id}">X</button>
+        `;
+        box.appendChild(row);
+      });
+
+      box.querySelectorAll("button[data-del]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = ensureActiveProfile();
+          if (!id) return;
+          const data = getProfileData(id);
+          const arr = Array.isArray(data.sheet?.specials) ? data.sheet.specials : [];
+          data.sheet.specials = arr.filter(x => x.id !== btn.getAttribute("data-del"));
+          setProfileData(id, data);
+          renderSpecials(data.sheet.specials);
+        });
+      });
+    }
+
     function loadSheetToUI(data){
       const sh = data.sheet || defaultProfileData().sheet;
-    
-      // PV/SAN
-      const pjHp = document.getElementById("pjHp");
-      const pjHpFill = document.getElementById("pjHpFill");
-      const pjHpLabel = document.getElementById("pjHpLabel");
+
+      const pjHp = $("pjHp");
       if (pjHp) pjHp.value = sh.hp20 ?? 10;
-      sync20(pjHp, pjHpFill, pjHpLabel);
-      const wounds = document.getElementById("pjWounds");
+      sync20(pjHp, $("pjHpFill"), $("pjHpLabel"));
+      const wounds = $("pjWounds");
       if (wounds) wounds.value = sh.wounds ?? "";
-    
-      const pjSan = document.getElementById("pjSan");
-      const pjSanFill = document.getElementById("pjSanFill");
-      const pjSanLabel = document.getElementById("pjSanLabel");
+
+      const pjSan = $("pjSan");
       if (pjSan) pjSan.value = sh.san20 ?? 10;
-      sync20(pjSan, pjSanFill, pjSanLabel);
-      const troubles = document.getElementById("pjTroubles");
+      sync20(pjSan, $("pjSanFill"), $("pjSanLabel"));
+      const troubles = $("pjTroubles");
       if (troubles) troubles.value = sh.troubles ?? "";
-    
-      // Stats
+
       const setStat = (key) => {
-        const r = document.getElementById(`stat_${key}`);
-        const v = document.getElementById(`stat_${key}_val`);
-        if (r) r.value = sh.stats?.[key] ?? 10;
-        if (v) v.textContent = String(sh.stats?.[key] ?? 10);
+        const r = $(`stat_${key}`);
+        const v = $(`stat_${key}_val`);
+        const val = sh.stats?.[key] ?? 10;
+        if (r) r.value = val;
+        if (v) v.textContent = String(val);
       };
       ["for","dex","end","int","intu"].forEach(setStat);
-    
-      // Skills
+
       const skills = sh.skills || {};
       document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
         const k = inp.getAttribute("data-skill");
         inp.value = Number(skills[k] ?? 0);
       });
-    
-      // Combat
-      const cr = document.getElementById("combat_ranged");
-      const cm = document.getElementById("combat_melee");
-      const cp = document.getElementById("combat_prot");
-      if (cr) cr.value = Number(sh.combat?.ranged ?? 0);
-      if (cm) cm.value = Number(sh.combat?.melee ?? 0);
-      if (cp) cp.value = Number(sh.combat?.prot ?? 0);
-    
-      const w1n = document.getElementById("w1_name");
-      const w1d = document.getElementById("w1_dmg");
-      const w2n = document.getElementById("w2_name");
-      const w2d = document.getElementById("w2_dmg");
-      if (w1n) w1n.value = sh.combat?.w1?.name ?? "";
-      if (w1d) w1d.value = sh.combat?.w1?.dmg ?? "";
-      if (w2n) w2n.value = sh.combat?.w2?.name ?? "";
-      if (w2d) w2d.value = sh.combat?.w2?.dmg ?? "";
-    
+
+      if ($("combat_ranged")) $("combat_ranged").value = Number(sh.combat?.ranged ?? 0);
+      if ($("combat_melee")) $("combat_melee").value = Number(sh.combat?.melee ?? 0);
+      if ($("combat_prot")) $("combat_prot").value = Number(sh.combat?.prot ?? 0);
+
+      if ($("w1_name")) $("w1_name").value = sh.combat?.w1?.name ?? "";
+      if ($("w1_dmg")) $("w1_dmg").value = sh.combat?.w1?.dmg ?? "";
+      if ($("w2_name")) $("w2_name").value = sh.combat?.w2?.name ?? "";
+      if ($("w2_dmg")) $("w2_dmg").value = sh.combat?.w2?.dmg ?? "";
+
       renderSpecials(sh.specials || []);
     }
-    
+
     function readSheetFromUI(){
       const sh = defaultProfileData().sheet;
-    
-      const pjHp = document.getElementById("pjHp");
-      const pjWounds = document.getElementById("pjWounds");
-      const pjSan = document.getElementById("pjSan");
-      const pjTroubles = document.getElementById("pjTroubles");
-    
-      sh.hp20 = pjHp ? Number(pjHp.value) : 10;
-      sh.wounds = pjWounds ? pjWounds.value : "";
-      sh.san20 = pjSan ? Number(pjSan.value) : 10;
-      sh.troubles = pjTroubles ? pjTroubles.value : "";
-    
-      const getStat = (k) => {
-        const r = document.getElementById(`stat_${k}`);
-        return r ? Number(r.value) : 10;
-      };
+
+      sh.hp20 = Number($("pjHp")?.value || 10);
+      sh.wounds = $("pjWounds")?.value || "";
+      sh.san20 = Number($("pjSan")?.value || 10);
+      sh.troubles = $("pjTroubles")?.value || "";
+
+      const getStat = (k) => Number($(`stat_${k}`)?.value || 10);
       sh.stats = {
         for: getStat("for"),
         dex: getStat("dex"),
@@ -847,36 +756,30 @@
         int: getStat("int"),
         intu: getStat("intu")
       };
-    
+
       const skills = {};
       document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
         const k = inp.getAttribute("data-skill");
         skills[k] = Number(inp.value || 0);
       });
       sh.skills = skills;
-    
+
       sh.combat = {
-        ranged: Number(document.getElementById("combat_ranged")?.value || 0),
-        melee: Number(document.getElementById("combat_melee")?.value || 0),
-        prot: Number(document.getElementById("combat_prot")?.value || 0),
-        w1: {
-          name: document.getElementById("w1_name")?.value || "",
-          dmg: document.getElementById("w1_dmg")?.value || ""
-        },
-        w2: {
-          name: document.getElementById("w2_name")?.value || "",
-          dmg: document.getElementById("w2_dmg")?.value || ""
-        }
+        ranged: Number($("combat_ranged")?.value || 0),
+        melee: Number($("combat_melee")?.value || 0),
+        prot: Number($("combat_prot")?.value || 0),
+        w1: { name: $("w1_name")?.value || "", dmg: $("w1_dmg")?.value || "" },
+        w2: { name: $("w2_name")?.value || "", dmg: $("w2_dmg")?.value || "" }
       };
-    
-      // specials gérés séparément (on garde la liste actuelle)
+
+      // specials = on garde la liste stockée (pas besoin de la relire depuis la UI)
       const id = ensureActiveProfile();
       const data = id ? getProfileData(id) : defaultProfileData();
       sh.specials = Array.isArray(data.sheet?.specials) ? data.sheet.specials : [];
-    
+
       return sh;
     }
-    
+
     function saveSheet(){
       const id = ensureActiveProfile();
       if (!id) return;
@@ -885,11 +788,79 @@
       setProfileData(id, data);
     }
 
+    // ===== LOG / INV / QUÊTES =====
+    function loadActiveProfileToUI(){
+      const id = ensureActiveProfile();
+      if (!id) return;
+
+      const data = getProfileData(id);
+
+      if ($("log")) $("log").value = data.log ?? "";
+
+      renderInv();
+      renderQuests();
+      refreshProfilesUI();
+      loadSheetToUI(data);
+    }
+
+    function saveLogOnly(){
+      const id = ensureActiveProfile();
+      if (!id) return;
+      const data = getProfileData(id);
+      data.log = $("log") ? $("log").value : (data.log || "");
+      setProfileData(id, data);
+    }
+
+    // Events Fiche PJ
+    ["input","change"].forEach(evt => {
+      const pjHp = $("pjHp");
+      const pjSan = $("pjSan");
+
+      if (pjHp) pjHp.addEventListener(evt, () => { sync20(pjHp, $("pjHpFill"), $("pjHpLabel")); saveSheet(); });
+      if (pjSan) pjSan.addEventListener(evt, () => { sync20(pjSan, $("pjSanFill"), $("pjSanLabel")); saveSheet(); });
+
+      ["for","dex","end","int","intu"].forEach(k => {
+        const r = $(`stat_${k}`);
+        const v = $(`stat_${k}_val`);
+        if (r) r.addEventListener(evt, () => { if (v) v.textContent = r.value; saveSheet(); });
+      });
+
+      document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
+        inp.addEventListener(evt, saveSheet);
+      });
+
+      ["combat_ranged","combat_melee","combat_prot","w1_name","w1_dmg","w2_name","w2_dmg","pjWounds","pjTroubles"].forEach(id => {
+        const el = $(id);
+        if (el) el.addEventListener(evt, saveSheet);
+      });
+    });
+
+    // Compétences spéciales
+    const addSpecBtn = $("addSpec");
+    if (addSpecBtn){
+      addSpecBtn.addEventListener("click", () => {
+        const name = ($("specName")?.value || "").trim();
+        const val = Number($("specVal")?.value || 0);
+        if (!name) return;
+
+        const id = ensureActiveProfile();
+        if (!id) return;
+        const data = getProfileData(id);
+        data.sheet.specials = Array.isArray(data.sheet?.specials) ? data.sheet.specials : [];
+        data.sheet.specials.unshift({ id: uid(), name, val });
+        setProfileData(id, data);
+
+        if ($("specName")) $("specName").value = "";
+        if ($("specVal")) $("specVal").value = "";
+        renderSpecials(data.sheet.specials);
+      });
+    }
+
     // Journal
     const btnSaveLog = $("saveLog");
     const btnClearLog = $("clearLog");
-    if (btnSaveLog) btnSaveLog.addEventListener("click", () => saveActiveProfileFromUI());
-    if (btnClearLog) btnClearLog.addEventListener("click", () => { if ($("log")) $("log").value = ""; saveActiveProfileFromUI(); });
+    if (btnSaveLog) btnSaveLog.addEventListener("click", saveLogOnly);
+    if (btnClearLog) btnClearLog.addEventListener("click", () => { if ($("log")) $("log").value = ""; saveLogOnly(); });
 
     // INVENTAIRE
     function renderInv(){
@@ -996,6 +967,7 @@
       if (mode === "BOARD"){
         shown.sort((a,b) => (order[a.status] ?? 9) - (order[b.status] ?? 9));
       } else if (mode === "ALL"){
+        // ordre actuel
       } else {
         shown = shown.filter(q => q.status === mode);
       }
@@ -1164,6 +1136,7 @@
       const profiles = getProfiles();
       const meta = profiles.find(p => p.id === id);
       const data = id ? getProfileData(id) : defaultProfileData();
+      const sh = data.sheet || defaultProfileData().sheet;
 
       const q = Array.isArray(data.quests) ? data.quests : [];
       const cEn = q.filter(x => x.status === "EN_COURS").length;
@@ -1174,7 +1147,7 @@
         `PIPBOY ${APP_VERSION}`,
         `Profil: ${(meta && meta.name) ? meta.name : "?"} (${id || "no-id"})`,
         `Campagne: ${(meta && meta.campaign) ? meta.campaign : "—"}`,
-        `Energie: ${data.status?.energy ?? "?"}% | PV: ${data.status?.hp ?? "?"}% | Etat: ${data.status?.state ?? "?"}`,
+        `PV: ${sh.hp20 ?? "?"}/20 | SAN: ${sh.san20 ?? "?"}/20`,
         `Quetes: EN_COURS ${cEn} | OK ${cOk} | RATEE ${cRa}`,
         `URL: ${location.href}`,
         `UA: ${navigator.userAgent}`
@@ -1245,12 +1218,12 @@
       loadActiveProfileToUI();
     });
 
-    // EXPORT / IMPORT (tous profils)
+    // ===== EXPORT / IMPORT (tous profils) =====
     const backupBox = $("backupBox");
 
     function exportAll(){
       const payload = {
-        v: 2,
+        v: 3,
         exportedAt: new Date().toISOString(),
         activeProfileId: getActiveId(),
         profiles: getProfiles(),
@@ -1273,7 +1246,7 @@
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
-      } catch (e) {}
+      } catch {}
     }
 
     function applyImport(){
@@ -1284,6 +1257,7 @@
 
       if (!obj || typeof obj !== "object") { alert("JSON invalide"); return; }
 
+      // Full backup
       if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object") {
         setProfiles(obj.profiles);
         Object.keys(obj.dataByProfile).forEach(id => {
@@ -1295,13 +1269,14 @@
         return;
       }
 
-      if (obj.status || obj.log || obj.inv || obj.quests) {
+      // Single profile-like payload
+      if (obj.sheet || obj.log || obj.inv || obj.quests) {
         const id = ensureActiveProfile();
         const data = getProfileData(id);
-        if (obj.status) data.status = obj.status;
         if (typeof obj.log === "string") data.log = obj.log;
         if (Array.isArray(obj.inv)) data.inv = obj.inv;
         if (Array.isArray(obj.quests)) data.quests = obj.quests;
+        if (obj.sheet && typeof obj.sheet === "object") data.sheet = obj.sheet;
         setProfileData(id, data);
         loadActiveProfileToUI();
         alert("Import appliqué sur le profil actif ✅");
@@ -1336,7 +1311,7 @@
       });
     }
 
-    // EXPORT / IMPORT : PROFIL ACTIF
+    // ===== EXPORT / IMPORT : PROFIL ACTIF =====
     const backupProfileBox = $("backupProfileBox");
 
     function exportActiveProfile(){
@@ -1347,7 +1322,7 @@
       const meta = profiles.find(p => p.id === id) || { id, name: "Profil", campaign: "", createdAt: "" };
 
       const payload = {
-        v: 1,
+        v: 2,
         exportedAt: new Date().toISOString(),
         profile: meta,
         data: getProfileData(id)
@@ -1366,7 +1341,7 @@
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
-      } catch (e) {}
+      } catch {}
     }
 
     function applyImportActiveProfile(){
@@ -1381,12 +1356,12 @@
 
       if (obj && typeof obj === "object" && obj.data && typeof obj.data === "object") {
         data = obj.data;
-      } else if (obj && typeof obj === "object" && (obj.status || obj.log || obj.inv || obj.quests)) {
+      } else if (obj && typeof obj === "object" && (obj.sheet || obj.log || obj.inv || obj.quests)) {
         data = {
-          status: obj.status || { energy: 70, hp: 85, state: "OK" },
           log: (typeof obj.log === "string") ? obj.log : "",
           inv: Array.isArray(obj.inv) ? obj.inv : [],
-          quests: Array.isArray(obj.quests) ? obj.quests : []
+          quests: Array.isArray(obj.quests) ? obj.quests : [],
+          sheet: (obj.sheet && typeof obj.sheet === "object") ? obj.sheet : defaultProfileData().sheet
         };
       }
 
@@ -1423,7 +1398,6 @@
     }
 
     // ===== PACK MJ =====
-    
     const packProfileBox = $("packProfileBox");
     const btnExportPackActive = $("exportPackActive");
     const btnApplyPackActive = $("applyPackActive");
@@ -1506,7 +1480,7 @@
 
       const payload = {
         kind: "pipboy_pack_mj",
-        v: 2,
+        v: 3,
         exportedAt: new Date().toISOString(),
         campaignId: (meta.campaign || "").trim() || "ORION",
         targetProfileName: meta.name,
@@ -1527,7 +1501,7 @@
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
-      } catch (e) {}
+      } catch {}
     }
 
     function applyPackActive(){
@@ -1559,7 +1533,6 @@
       alert("Pack MJ appliqué ✅ (fusion + briefing)");
     }
 
-    // Appliquer à tous les profils
     const btnApplyPackAllProfiles = $("applyPackAllProfiles");
     function applyPackAllProfiles(){
       const profiles = getProfiles();
@@ -1596,7 +1569,6 @@
       alert("Pack MJ appliqué à tous les profils ✅");
     }
 
-    // Appliquer à la campagne
     const btnApplyPackCampaign = $("applyPackCampaign");
     function applyPackCampaign(){
       const profiles = getProfiles();
@@ -1667,64 +1639,6 @@
       });
     }
 
-    // Export/import active/all buttons already wired earlier
-
-
-    function renderSpecials(list){
-      const box = document.getElementById("specList");
-      if (!box) return;
-      box.innerHTML = "";
-    
-      if (!list || list.length === 0){
-        box.innerHTML = `<p class="hint">Aucune compétence spéciale.</p>`;
-        return;
-      }
-    
-      list.forEach(sp => {
-        const row = document.createElement("div");
-        row.className = "specRow";
-        row.innerHTML = `
-          <div>${escapeHtml(sp.name || "")}</div>
-          <div style="text-align:right; font-weight:900;">${Number(sp.val || 0)}%</div>
-          <button class="mini danger" type="button" data-del="${sp.id}">X</button>
-        `;
-        box.appendChild(row);
-      });
-    
-      box.querySelectorAll("button[data-del]").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const id = ensureActiveProfile();
-          if (!id) return;
-          const data = getProfileData(id);
-          const arr = Array.isArray(data.sheet?.specials) ? data.sheet.specials : [];
-          data.sheet.specials = arr.filter(x => x.id !== btn.getAttribute("data-del"));
-          setProfileData(id, data);
-          renderSpecials(data.sheet.specials);
-        });
-      });
-    }
-    
-    const addSpecBtn = document.getElementById("addSpec");
-    if (addSpecBtn){
-      addSpecBtn.addEventListener("click", () => {
-        const name = (document.getElementById("specName")?.value || "").trim();
-        const val = Number(document.getElementById("specVal")?.value || 0);
-        if (!name) return;
-    
-        const id = ensureActiveProfile();
-        if (!id) return;
-        const data = getProfileData(id);
-        data.sheet.specials = Array.isArray(data.sheet?.specials) ? data.sheet.specials : [];
-        data.sheet.specials.unshift({ id: uid(), name, val });
-        setProfileData(id, data);
-    
-        const n = document.getElementById("specName"); if (n) n.value = "";
-        const v = document.getElementById("specVal"); if (v) v.value = "";
-        renderSpecials(data.sheet.specials);
-      });
-    }
-    // (Keep as-is; handlers defined above)
-    
     // Chargement initial
     refreshProfilesUI();
     loadActiveProfileToUI();
@@ -1736,3 +1650,4 @@
   </script>
 </body>
 </html>
+```
