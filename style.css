@@ -307,3 +307,81 @@ textarea#backupProfileBox{
 .modalBody{
   padding: 12px;
 }
+
+/* Fiche PJ layout */
+.gridSheet{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:12px;
+}
+
+@media (min-width: 860px){
+  .gridSheet{ grid-template-columns: 1fr 1fr; }
+}
+
+.card.sub{
+  border: 1px solid rgba(183,255,217,.12);
+  background: rgba(10, 30, 20, .35);
+}
+
+.statsGrid{ display:grid; gap:10px; }
+.statLine{
+  display:grid;
+  grid-template-columns: 70px 1fr 44px;
+  gap:10px;
+  align-items:center;
+}
+.statName{ font-weight:900; letter-spacing:.12em; }
+.statVal{ text-align:right; font-weight:900; }
+
+.skillsGrid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:10px;
+}
+@media (min-width: 860px){
+  .skillsGrid{ grid-template-columns: 1fr 1fr; }
+}
+
+.field{ display:flex; flex-direction:column; gap:6px; }
+.field > span{ font-size: 12px; opacity:.85; }
+
+.combatGrid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:10px;
+}
+@media (min-width: 860px){
+  .combatGrid{ grid-template-columns: 1fr 1fr 1fr; }
+}
+
+.weaponsGrid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+@media (min-width: 860px){
+  .weaponsGrid{ grid-template-columns: 1fr 1fr; }
+}
+
+.weaponCard{
+  border: 1px dashed rgba(183,255,217,.18);
+  border-radius: 14px;
+  padding: 10px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.specList{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.specRow{
+  display:grid;
+  grid-template-columns: 1fr 80px 44px;
+  gap:10px;
+  align-items:center;
+  border: 1px solid rgba(183,255,217,.10);
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: rgba(0,0,0,.15);
+}
