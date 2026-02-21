@@ -203,6 +203,7 @@
     </footer>
 
     <!-- PROFIL MODAL -->
+    
     <div id="profileModal" class="modal" aria-hidden="true">
       <div class="modalBackdrop" id="closeProfileBackdrop"></div>
 
@@ -212,7 +213,7 @@
             <div class="modalTitle" id="profileModalTitle">PROFIL</div>
             <div class="tiny" id="profileModalHint">Gestion perso & campagne</div>
           </div>
-          <button id="closeProfile" class="miniBtn danger" type="button">X</button>
+          <button id="closeProfile" class="miniBtn" type="button">FERMER</button>
         </div>
 
         <div class="modalBody">
@@ -239,9 +240,7 @@
             <p class="hint">Même “Campagne” = Pack MJ appliqué en masse.</p>
           </div>
 
-          <div class="row right">
-            <button id="closeProfile2" type="button">Fermer</button>
-          </div>
+          
         </div>
       </div>
     </div>
@@ -294,7 +293,7 @@
     const openProfileBtn = $("openProfile");
     const profileModal = $("profileModal");
     const closeProfileBtn = $("closeProfile");
-    const closeProfileBtn2 = $("closeProfile2");
+   
     const closeProfileBackdrop = $("closeProfileBackdrop");
 
     function openProfileModal(){
@@ -312,7 +311,7 @@
 
     if (openProfileBtn) openProfileBtn.addEventListener("click", openProfileModal);
     if (closeProfileBtn) closeProfileBtn.addEventListener("click", closeProfileModal);
-    if (closeProfileBtn2) closeProfileBtn2.addEventListener("click", closeProfileModal);
+   
     if (closeProfileBackdrop) closeProfileBackdrop.addEventListener("click", closeProfileModal);
 
     document.addEventListener("keydown", (e) => {
