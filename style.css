@@ -233,3 +233,77 @@ textarea#backupProfileBox{
   letter-spacing: 1px;
   padding: 6px 2px;
 }
+/* Topbar actions */
+.topbarActions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.miniBtn{
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(183,255,217,.35);
+  background: rgba(10, 30, 20, .55);
+  color: #b7ffd9;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.miniBtn.danger{
+  border-color: rgba(255, 90, 90, .45);
+  color: rgba(255, 140, 140, 1);
+}
+
+/* Modal */
+.modal{
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 9999;
+}
+
+.modal.show{
+  display: block;
+}
+
+.modalBackdrop{
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+}
+
+.modalPanel{
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  width: min(720px, calc(100vw - 20px));
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(183,255,217,.25);
+  background: rgba(8, 20, 14, .96);
+  box-shadow: 0 12px 40px rgba(0,0,0,.55);
+}
+
+.modalHead{
+  position: sticky;
+  top: 0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(183,255,217,.15);
+  background: rgba(8, 20, 14, .98);
+}
+
+.modalTitle{
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.modalBody{
+  padding: 12px;
+}
