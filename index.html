@@ -16,10 +16,11 @@
   <header class="topbar">
     <div class="brand">PIP-BOY // ORION</div>
 
-    <div class="topbarActions">
-      <button id="openProfile" class="miniBtn" type="button">PROFIL</button>
-      <div class="clock" id="clock">--:--</div>
-    </div>
+   <div class="topbarActions">
+    <button id="openProfile" class="miniBtn" type="button">PROFIL</button>
+    <button id="openIO" class="miniBtn" type="button">IMPORT/EXPORT</button>
+    <div class="clock" id="clock">--:--</div>
+   </div>
   </header>
 
   <main class="shell">
@@ -115,68 +116,6 @@
         <div id="quests" class="questList"></div>
       </div>
 
-      <!-- SAUVEGARDE -->
-      <div class="card">
-        <h2>Sauvegarde</h2>
-        <p class="hint">Exporter/Importer tous les profils (et le profil actif).</p>
-
-        <div class="row">
-          <button id="exportAll" type="button">Exporter JSON</button>
-          <label class="filebtn">
-            Importer fichier
-            <input id="fileImport" type="file" accept="application/json,.json">
-          </label>
-        </div>
-
-        <textarea id="backupBox" rows="8" placeholder="JSON ici… (export ou collage)"></textarea>
-
-        <div class="row right">
-          <button id="clearBox" class="danger" type="button">Vider</button>
-          <button id="applyImport" type="button">Appliquer l’import</button>
-        </div>
-
-        <hr class="sep">
-
-        <h2>Profil actif</h2>
-        <p class="hint">Exporter/importer uniquement le profil sélectionné. + Pack MJ (fusion missions).</p>
-
-        <div class="row">
-          <button id="exportActive" type="button">Exporter ce profil</button>
-          <label class="filebtn">
-            Importer dans ce profil
-            <input id="fileImportActive" type="file" accept="application/json,.json">
-          </label>
-        </div>
-
-        <textarea id="backupProfileBox" rows="8" placeholder="JSON du profil actif (export ou collage)…"></textarea>
-
-        <div class="row right">
-          <button id="clearProfileBox" class="danger" type="button">Vider</button>
-          <button id="applyImportActive" type="button">Appliquer sur ce profil</button>
-        </div>
-
-        <hr class="sep">
-
-        <h2>Pack MJ (profil actif)</h2>
-        <p class="hint">À partager aux joueurs: missions + briefing. Import = fusion intelligente (garde les coches/notes si possible).</p>
-
-        <div class="row">
-          <button id="exportPackActive" type="button">Exporter Pack MJ</button>
-          <label class="filebtn">
-            Importer Pack MJ
-            <input id="fileImportPackActive" type="file" accept="application/json,.json">
-          </label>
-          <button id="applyPackAllProfiles" type="button">Appliquer à tous les profils</button>
-        </div>
-
-        <textarea id="packProfileBox" rows="8" placeholder="Pack MJ (export ou collage)…"></textarea>
-
-        <div class="row right">
-          <button id="clearPackProfileBox" class="danger" type="button">Vider</button>
-          <button id="applyPackActive" type="button">Appliquer (profil)</button>
-          <button id="applyPackCampaign" type="button">Appliquer (campagne)</button>
-        </div>
-      </div>
     </section>
 
     <!-- INV -->
@@ -241,6 +180,87 @@
           </div>
 
           
+        </div>
+      </div>
+    </div>
+    <!-- IMPORT/EXPORT MODAL -->
+    <div id="ioModal" class="modal" aria-hidden="true">
+      <div class="modalBackdrop" id="closeIOBackdrop"></div>
+    
+      <div class="modalPanel" role="dialog" aria-modal="true" aria-labelledby="ioModalTitle">
+        <div class="modalHead">
+          <div>
+            <div class="modalTitle" id="ioModalTitle">IMPORT / EXPORT</div>
+            <div class="tiny">Backups, profil actif, Pack MJ</div>
+          </div>
+          <button id="closeIO" class="miniBtn" type="button">FERMER</button>
+        </div>
+    
+        <div class="modalBody">
+    
+          <!-- SAUVEGARDE (ex-DATA) -->
+          <div class="card">
+            <h2>Sauvegarde</h2>
+            <p class="hint">Exporter/Importer tous les profils (et le profil actif).</p>
+    
+            <div class="row">
+              <button id="exportAll" type="button">Exporter JSON</button>
+              <label class="filebtn">
+                Importer fichier
+                <input id="fileImport" type="file" accept="application/json,.json">
+              </label>
+            </div>
+    
+            <textarea id="backupBox" rows="8" placeholder="JSON ici… (export ou collage)"></textarea>
+    
+            <div class="row right">
+              <button id="clearBox" class="danger" type="button">Vider</button>
+              <button id="applyImport" type="button">Appliquer l’import</button>
+            </div>
+    
+            <hr class="sep">
+    
+            <h2>Profil actif</h2>
+            <p class="hint">Exporter/importer uniquement le profil sélectionné.</p>
+    
+            <div class="row">
+              <button id="exportActive" type="button">Exporter ce profil</button>
+              <label class="filebtn">
+                Importer dans ce profil
+                <input id="fileImportActive" type="file" accept="application/json,.json">
+              </label>
+            </div>
+    
+            <textarea id="backupProfileBox" rows="8" placeholder="JSON du profil actif (export ou collage)…"></textarea>
+    
+            <div class="row right">
+              <button id="clearProfileBox" class="danger" type="button">Vider</button>
+              <button id="applyImportActive" type="button">Appliquer sur ce profil</button>
+            </div>
+    
+            <hr class="sep">
+    
+            <h2>Pack MJ (profil actif)</h2>
+            <p class="hint">Exporter/importer un pack MJ. Import = fusion intelligente (garde coches/notes si possible).</p>
+    
+            <div class="row">
+              <button id="exportPackActive" type="button">Exporter Pack MJ</button>
+              <label class="filebtn">
+                Importer Pack MJ
+                <input id="fileImportPackActive" type="file" accept="application/json,.json">
+              </label>
+              <button id="applyPackAllProfiles" type="button">Appliquer à tous les profils</button>
+            </div>
+    
+            <textarea id="packProfileBox" rows="8" placeholder="Pack MJ (export ou collage)…"></textarea>
+    
+            <div class="row right">
+              <button id="clearPackProfileBox" class="danger" type="button">Vider</button>
+              <button id="applyPackActive" type="button">Appliquer (profil)</button>
+              <button id="applyPackCampaign" type="button">Appliquer (campagne)</button>
+            </div>
+          </div>
+    
         </div>
       </div>
     </div>
@@ -318,6 +338,35 @@
       if (e.key === "Escape") closeProfileModal();
     });
 
+   // ===== MODAL IMPORT/EXPORT =====
+  const openIOBtn = $("openIO");
+  const ioModal = $("ioModal");
+  const closeIOBtn = $("closeIO");
+  const closeIOBackdrop = $("closeIOBackdrop");
+  
+  function openIOModal(){
+    if (!ioModal) return;
+    ioModal.classList.add("show");
+    ioModal.setAttribute("aria-hidden", "false");
+  }
+  
+  function closeIOModal(){
+    if (!ioModal) return;
+    ioModal.classList.remove("show");
+    ioModal.setAttribute("aria-hidden", "true");
+  }
+  
+  if (openIOBtn) openIOBtn.addEventListener("click", openIOModal);
+  if (closeIOBtn) closeIOBtn.addEventListener("click", closeIOModal);
+  if (closeIOBackdrop) closeIOBackdrop.addEventListener("click", closeIOModal);
+  
+  // ESC: ferme IO si ouvert, sinon ferme Profil
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (ioModal && ioModal.classList.contains("show")) closeIOModal();
+  });
+      
+    
     // Auto-fit SVG (nom long)
     function fitSvgText(textEl, maxWidth = 760, maxSize = 72, minSize = 28){
       if (!textEl) return;
@@ -1035,6 +1084,7 @@
     }
 
     // ===== PACK MJ =====
+    
     const packProfileBox = $("packProfileBox");
     const btnExportPackActive = $("exportPackActive");
     const btnApplyPackActive = $("applyPackActive");
