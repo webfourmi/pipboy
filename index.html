@@ -339,6 +339,7 @@
     const profileName = $("profileName");
     const activeHint = $("activeProfileHint");
     const svgName = $("profileNameSvg");
+    const profileCampaign = $("profileCampaign");
 
     function refreshProfilesUI(){
       const profiles = getProfiles();
@@ -1110,7 +1111,7 @@
       data.quests = mergeQuests(data.quests, obj.quests);
       // briefing: on l’ajoute au journal en haut (sans écraser)
 
-      const btnApplyPackCampaign = $("applyPackCampaign");
+    const btnApplyPackCampaign = $("applyPackCampaign");
 
     function applyPackCampaign(){
       const profiles = getProfiles();
