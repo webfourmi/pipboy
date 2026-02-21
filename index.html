@@ -363,9 +363,23 @@
   // ESC: ferme IO si ouvert, sinon ferme Profil
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (ioModal && ioModal.classList.contains("show")) closeIOModal();
+  
+    // ferme d'abord Import/Export si ouvert
+    const io = document.getElementById("ioModal");
+    if (io && io.classList.contains("show")) {
+      io.classList.remove("show");
+      io.setAttribute("aria-hidden", "true");
+      return;
+    }
+  
+    // sinon ferme Profil si ouvert
+    const pm = document.getElementById("profileModal");
+    if (pm && pm.classList.contains("show")) {
+      pm.classList.remove("show");
+      pm.setAttribute("aria-hidden", "true");
+    }
   });
-      
+        
     
     // Auto-fit SVG (nom long)
     function fitSvgText(textEl, maxWidth = 760, maxSize = 72, minSize = 28){
