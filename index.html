@@ -1249,23 +1249,68 @@
     }
 
     function applyImport(){
-      if (!backupBox) return;
-      let obj;
-      try { obj = JSON.parse(backupBox.value); }
-      catch { alert("JSON invalide 😵‍💫"); return; }
-
-      if (!obj || typeof obj !== "object") { alert("JSON invalide"); return; }
-
-      // Full backup
-      if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object") {
-        setProfiles(obj.profiles);
-        Object.keys(obj.dataByProfile).forEach(id => {
-          setProfileData(id, obj.dataByProfile[id]);
-        });
-        if (obj.activeProfileId) setActiveId(obj.activeProfileId);
-        loadActiveProfileToUI();
-        alert("Import appliqué ✅");
-        return;
+        if (!backupBox) return;
+      
+        let obj;
+        try { obj = JSON.parse(backupBox.value); }
+        catch { alert("JSON invalide 😵‍💫"); return; }
+      
+        if (!obj || typeof obj !== "object") { alert("JSON invalide"); return; }
+      
+        // ====== CAS 1 : Full backup (exportAll) ======
+        if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object") {
+      
+          // sécurité: filtre les profils sans id
+          const incomingProfiles = obj.profiles
+            .filter(p => p && typeof p === "object" && typeof p.id === "string" && p.id.trim().length > 0)
+            .map(p => ({
+              id: p.id,
+              name: (typeof p.name === "string" && p.name.trim()) ? p.name.trim() : "Profil",
+              campaign: (typeof p.campaign === "string") ? p.campaign.trim() : "",
+              createdAt: p.createdAt || new Date().toISOString()
+            }));
+      
+          if (incomingProfiles.length === 0){
+            alert("Backup invalide: aucun profil détecté.");
+            return;
+          }
+      
+          // 1) On écrase la liste des profils
+          setProfiles(incomingProfiles);
+      
+          // 2) On écrit les data par profil
+          incomingProfiles.forEach(p => {
+            const d = obj.dataByProfile[p.id];
+            setProfileData(p.id, d || defaultProfileData());
+          });
+      
+          // 3) Profil actif: si invalide, on prend le 1er
+          const requestedActive = (typeof obj.activeProfileId === "string") ? obj.activeProfileId : null;
+          const activeOk = requestedActive && incomingProfiles.some(p => p.id === requestedActive);
+          setActiveId(activeOk ? requestedActive : incomingProfiles[0].id);
+      
+          loadActiveProfileToUI();
+          alert("Import complet appliqué ✅");
+          return;
+        }
+      
+        // ====== CAS 2 : Import “profil-like” (sheet/log/inv/quests) vers profil actif ======
+        if (obj.sheet || obj.log || obj.inv || obj.quests) {
+          const id = ensureActiveProfile();
+          const data = getProfileData(id);
+      
+          if (typeof obj.log === "string") data.log = obj.log;
+          if (Array.isArray(obj.inv)) data.inv = obj.inv;
+          if (Array.isArray(obj.quests)) data.quests = obj.quests;
+          if (obj.sheet && typeof obj.sheet === "object") data.sheet = obj.sheet;
+      
+          setProfileData(id, data);
+          loadActiveProfileToUI();
+          alert("Import appliqué sur le profil actif ✅");
+          return;
+        }
+      
+        alert("Format non reconnu 😵‍💫");
       }
 
       // Single profile-like payload
