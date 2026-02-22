@@ -1346,16 +1346,21 @@
     function applyImportActiveProfile(){
       const id = ensureActiveProfile();
       if (!id || !backupProfileBox) return;
-
+    
       let obj;
       try { obj = JSON.parse(backupProfileBox.value); }
       catch { alert("JSON invalide 😵‍💫"); return; }
-
+    
       let data = null;
-
+      let meta = null;
+    
+      // Format "exportActiveProfile" (payload v2)
       if (obj && typeof obj === "object" && obj.data && typeof obj.data === "object") {
         data = obj.data;
-      } else if (obj && typeof obj === "object" && (obj.sheet || obj.log || obj.inv || obj.quests)) {
+        if (obj.profile && typeof obj.profile === "object") meta = obj.profile;
+      }
+      // Format "profil simple" (sheet/log/inv/quests)
+      else if (obj && typeof obj === "object" && (obj.sheet || obj.log || obj.inv || obj.quests)) {
         data = {
           log: (typeof obj.log === "string") ? obj.log : "",
           inv: Array.isArray(obj.inv) ? obj.inv : [],
@@ -1363,6 +1368,26 @@
           sheet: (obj.sheet && typeof obj.sheet === "object") ? obj.sheet : defaultProfileData().sheet
         };
       }
+
+      if (!data) { alert("Format non reconnu 😵‍💫"); return; }
+    
+      // 1) Données du profil
+      setProfileData(id, data);
+    
+      // 2) Meta (nom/campagne) si présent dans le JSON
+      if (meta && (meta.name || meta.campaign)) {
+        const profiles = getProfiles();
+        const p = profiles.find(x => x.id === id);
+        if (p){
+          if (typeof meta.name === "string" && meta.name.trim()) p.name = meta.name.trim();
+          if (typeof meta.campaign === "string") p.campaign = meta.campaign.trim();
+          setProfiles(profiles);
+        }
+      }
+
+  loadActiveProfileToUI();
+  alert("Profil actif mis à jour ✅ (nom/campagne inclus si présents)");
+}
 
       if (!data) { alert("Format non reconnu 😵‍💫"); return; }
 
