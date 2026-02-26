@@ -493,11 +493,18 @@
         inv: [],
         quests: [],
         sheet: {
-          hp20: 10,
+          hp: 10,
+          hpMax: 20,
           wounds: "",
-          san20: 10,
+          san: 10,
+          sanMax: 20,
           troubles: "",
-          stats: { for:10, dex:10, end:10, int:10, intu:10 },
+          stats: {
+            for: { v: 10, max: 20 },
+            dex: { v: 10, max: 20 },
+            end: { v: 10, max: 20 },
+            int: { v: 10, max: 20 },
+            intu:{ v: 10, max: 20 }
           skills: {},
           combat: { ranged: 0, melee: 0, prot: 0, w1:{name:"", dmg:""}, w2:{name:"", dmg:""} },
           specials: []
@@ -519,8 +526,27 @@
       out.sheet.combat.w1 = Object.assign({}, base.sheet.combat.w1, (out.sheet.combat.w1 || {}));
       out.sheet.combat.w2 = Object.assign({}, base.sheet.combat.w2, (out.sheet.combat.w2 || {}));
       out.sheet.specials = Array.isArray(out.sheet.specials) ? out.sheet.specials : [];
-      out.sheet.hp20 = Number.isFinite(+out.sheet.hp20) ? +out.sheet.hp20 : 10;
-      out.sheet.san20 = Number.isFinite(+out.sheet.san20) ? +out.sheet.san20 : 10;
+      
+      out.sheet.hpMax = Number.isFinite(+out.sheet.hpMax) && +out.sheet.hpMax > 0 ? +out.sheet.hpMax : 20;
+      out.sheet.sanMax = Number.isFinite(+out.sheet.sanMax) && +out.sheet.sanMax > 0 ? +out.sheet.sanMax : 20;
+      out.sheet.hp = Number.isFinite(+out.sheet.hp) ? +out.sheet.hp : 10;
+      out.sheet.san = Number.isFinite(+out.sheet.san) ? +out.sheet.san : 10;
+
+      // clamp
+      out.sheet.hp = Math.max(0, Math.min(out.sheet.hp, out.sheet.hpMax));
+      out.sheet.san = Math.max(0, Math.min(out.sheet.san, out.sheet.sanMax));
+      
+      // stats: assurer format {v,max}
+      const s = out.sheet.stats || {};
+      ["for","dex","end","int","intu"].forEach(k => {
+        const cur = s[k];
+        if (typeof cur === "number") s[k] = { v: cur, max: 20 }; // compat ancienne version
+        if (!cur || typeof s[k] !== "object") s[k] = { v: 10, max: 20 };
+        s[k].max = Number.isFinite(+s[k].max) && +s[k].max > 0 ? +s[k].max : 20;
+        s[k].v = Number.isFinite(+s[k].v) ? +s[k].v : 10;
+        s[k].v = Math.max(0, Math.min(s[k].v, s[k].max));
+      });
+      out.sheet.stats = s;
 
       return out;
     }
