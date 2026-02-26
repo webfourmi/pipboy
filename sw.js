@@ -1,4 +1,4 @@
-const CACHE_NAME = "pipboy-v22b";
+const CACHE_NAME = "pipboy-v23";
 const ASSETS = [
   "./",
   "./index.html",
