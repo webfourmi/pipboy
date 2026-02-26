@@ -285,7 +285,6 @@
         </div>
 
         <div class="modalBody">
-
           <div class="card">
             <h2>Support</h2>
             <p class="hint">À coller au MJ en cas de souci (version, campagne, quêtes…).</p>
@@ -294,7 +293,6 @@
             </div>
           </div>
 
-          <!-- SAUVEGARDE -->
           <div class="card">
             <h2>Sauvegarde</h2>
             <p class="hint">Exporter/Importer tous les profils (et le profil actif).</p>
@@ -527,7 +525,7 @@
     function setProfileData(id, data){ store.set(profileKey(id), normalizeProfileData(data)); }
     function deleteProfileData(id){ store.del(profileKey(id)); }
 
-    // Migration ancien format -> profil P1 (log/inv/quests uniquement)
+    // Migration ancien format -> profil P1 (log/inv uniquement)
     function migrateIfNeeded(){
       const profiles = getProfiles();
       if (profiles.length > 0) return;
@@ -596,25 +594,10 @@
 
     // ===== FICHE PJ =====
     const SKILLS = [
-      "adaptation",
-      "astrophysique",
-      "mathematiques",
-      "biologie",
-      "geologie",
-      "bricoler",
-      "bidouiller",
-      "comprendre_etrange",
-      "convaincre",
-      "courir_sauter_nager",
-      "deplacement_zero_g",
-      "discretion",
-      "garder_son_calme",
-      "observer",
-      "pilotage",
-      "programmation",
-      "reflexes",
-      "soigner",
-      "survie"
+      "adaptation","astrophysique","mathematiques","biologie","geologie",
+      "bricoler","bidouiller","comprendre_etrange","convaincre",
+      "courir_sauter_nager","deplacement_zero_g","discretion","garder_son_calme",
+      "observer","pilotage","programmation","reflexes","soigner","survie"
     ];
 
     const SKILLS_LABEL = {
@@ -703,14 +686,12 @@
       const pjHp = $("pjHp");
       if (pjHp) pjHp.value = sh.hp20 ?? 10;
       sync20(pjHp, $("pjHpFill"), $("pjHpLabel"));
-      const wounds = $("pjWounds");
-      if (wounds) wounds.value = sh.wounds ?? "";
+      if ($("pjWounds")) $("pjWounds").value = sh.wounds ?? "";
 
       const pjSan = $("pjSan");
       if (pjSan) pjSan.value = sh.san20 ?? 10;
       sync20(pjSan, $("pjSanFill"), $("pjSanLabel"));
-      const troubles = $("pjTroubles");
-      if (troubles) troubles.value = sh.troubles ?? "";
+      if ($("pjTroubles")) $("pjTroubles").value = sh.troubles ?? "";
 
       const setStat = (key) => {
         const r = $(`stat_${key}`);
@@ -748,13 +729,7 @@
       sh.troubles = $("pjTroubles")?.value || "";
 
       const getStat = (k) => Number($(`stat_${k}`)?.value || 10);
-      sh.stats = {
-        for: getStat("for"),
-        dex: getStat("dex"),
-        end: getStat("end"),
-        int: getStat("int"),
-        intu: getStat("intu")
-      };
+      sh.stats = { for: getStat("for"), dex: getStat("dex"), end: getStat("end"), int: getStat("int"), intu: getStat("intu") };
 
       const skills = {};
       document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
@@ -771,7 +746,6 @@
         w2: { name: $("w2_name")?.value || "", dmg: $("w2_dmg")?.value || "" }
       };
 
-      // specials = on garde la liste stockée (pas besoin de la relire depuis la UI)
       const id = ensureActiveProfile();
       const data = id ? getProfileData(id) : defaultProfileData();
       sh.specials = Array.isArray(data.sheet?.specials) ? data.sheet.specials : [];
@@ -965,9 +939,7 @@
       let shown = quests.slice();
       if (mode === "BOARD"){
         shown.sort((a,b) => (order[a.status] ?? 9) - (order[b.status] ?? 9));
-      } else if (mode === "ALL"){
-        // ordre actuel
-      } else {
+      } else if (mode !== "ALL"){
         shown = shown.filter(q => q.status === mode);
       }
 
@@ -1128,7 +1100,7 @@
       }, true);
     }
 
-    // Diagnostic (copie)
+    // ===== DIAGNOSTIC =====
     const copyDiagBtn = $("copyDiag");
     if (copyDiagBtn) copyDiagBtn.addEventListener("click", async () => {
       const id = ensureActiveProfile();
@@ -1160,7 +1132,7 @@
       }
     });
 
-    // PROFILS: changer / créer / sauvegarder / supprimer
+    // ===== PROFILS =====
     if (profileSelect) profileSelect.addEventListener("change", () => {
       setActiveId(profileSelect.value);
       loadActiveProfileToUI();
@@ -1249,78 +1221,56 @@
     }
 
     function applyImport(){
-        if (!backupBox) return;
-      
-        let obj;
-        try { obj = JSON.parse(backupBox.value); }
-        catch { alert("JSON invalide 😵‍💫"); return; }
-      
-        if (!obj || typeof obj !== "object") { alert("JSON invalide"); return; }
-      
-        // ====== CAS 1 : Full backup (exportAll) ======
-        if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object") {
-      
-          // sécurité: filtre les profils sans id
-          const incomingProfiles = obj.profiles
-            .filter(p => p && typeof p === "object" && typeof p.id === "string" && p.id.trim().length > 0)
-            .map(p => ({
-              id: p.id,
-              name: (typeof p.name === "string" && p.name.trim()) ? p.name.trim() : "Profil",
-              campaign: (typeof p.campaign === "string") ? p.campaign.trim() : "",
-              createdAt: p.createdAt || new Date().toISOString()
-            }));
-      
-          if (incomingProfiles.length === 0){
-            alert("Backup invalide: aucun profil détecté.");
-            return;
-          }
-      
-          // 1) On écrase la liste des profils
-          setProfiles(incomingProfiles);
-      
-          // 2) On écrit les data par profil
-          incomingProfiles.forEach(p => {
-            const d = obj.dataByProfile[p.id];
-            setProfileData(p.id, d || defaultProfileData());
-          });
-      
-          // 3) Profil actif: si invalide, on prend le 1er
-          const requestedActive = (typeof obj.activeProfileId === "string") ? obj.activeProfileId : null;
-          const activeOk = requestedActive && incomingProfiles.some(p => p.id === requestedActive);
-          setActiveId(activeOk ? requestedActive : incomingProfiles[0].id);
-      
-          loadActiveProfileToUI();
-          alert("Import complet appliqué ✅");
+      if (!backupBox) return;
+
+      let obj;
+      try { obj = JSON.parse(backupBox.value); }
+      catch { alert("JSON invalide 😵‍💫"); return; }
+
+      if (!obj || typeof obj !== "object") { alert("JSON invalide"); return; }
+
+      // CAS 1 : Full backup
+      if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object") {
+        const incomingProfiles = obj.profiles
+          .filter(p => p && typeof p === "object" && typeof p.id === "string" && p.id.trim().length > 0)
+          .map(p => ({
+            id: p.id,
+            name: (typeof p.name === "string" && p.name.trim()) ? p.name.trim() : "Profil",
+            campaign: (typeof p.campaign === "string") ? p.campaign.trim() : "",
+            createdAt: p.createdAt || new Date().toISOString()
+          }));
+
+        if (incomingProfiles.length === 0){
+          alert("Backup invalide: aucun profil détecté.");
           return;
         }
-      
-        // ====== CAS 2 : Import “profil-like” (sheet/log/inv/quests) vers profil actif ======
-        if (obj.sheet || obj.log || obj.inv || obj.quests) {
-          const id = ensureActiveProfile();
-          const data = getProfileData(id);
-      
-          if (typeof obj.log === "string") data.log = obj.log;
-          if (Array.isArray(obj.inv)) data.inv = obj.inv;
-          if (Array.isArray(obj.quests)) data.quests = obj.quests;
-          if (obj.sheet && typeof obj.sheet === "object") data.sheet = obj.sheet;
-      
-          setProfileData(id, data);
-          loadActiveProfileToUI();
-          alert("Import appliqué sur le profil actif ✅");
-          return;
-        }
-      
-        alert("Format non reconnu 😵‍💫");
+
+        setProfiles(incomingProfiles);
+
+        incomingProfiles.forEach(p => {
+          const d = obj.dataByProfile[p.id];
+          setProfileData(p.id, d || defaultProfileData());
+        });
+
+        const requestedActive = (typeof obj.activeProfileId === "string") ? obj.activeProfileId : null;
+        const activeOk = requestedActive && incomingProfiles.some(p => p.id === requestedActive);
+        setActiveId(activeOk ? requestedActive : incomingProfiles[0].id);
+
+        loadActiveProfileToUI();
+        alert("Import complet appliqué ✅");
+        return;
       }
 
-      // Single profile-like payload
+      // CAS 2 : Import “profil-like” vers profil actif
       if (obj.sheet || obj.log || obj.inv || obj.quests) {
         const id = ensureActiveProfile();
         const data = getProfileData(id);
+
         if (typeof obj.log === "string") data.log = obj.log;
         if (Array.isArray(obj.inv)) data.inv = obj.inv;
         if (Array.isArray(obj.quests)) data.quests = obj.quests;
         if (obj.sheet && typeof obj.sheet === "object") data.sheet = obj.sheet;
+
         setProfileData(id, data);
         loadActiveProfileToUI();
         alert("Import appliqué sur le profil actif ✅");
@@ -1391,21 +1341,18 @@
     function applyImportActiveProfile(){
       const id = ensureActiveProfile();
       if (!id || !backupProfileBox) return;
-    
+
       let obj;
       try { obj = JSON.parse(backupProfileBox.value); }
       catch { alert("JSON invalide 😵‍💫"); return; }
-    
+
       let data = null;
       let meta = null;
-    
-      // Format "exportActiveProfile" (payload v2)
+
       if (obj && typeof obj === "object" && obj.data && typeof obj.data === "object") {
         data = obj.data;
         if (obj.profile && typeof obj.profile === "object") meta = obj.profile;
-      }
-      // Format "profil simple" (sheet/log/inv/quests)
-      else if (obj && typeof obj === "object" && (obj.sheet || obj.log || obj.inv || obj.quests)) {
+      } else if (obj && typeof obj === "object" && (obj.sheet || obj.log || obj.inv || obj.quests)) {
         data = {
           log: (typeof obj.log === "string") ? obj.log : "",
           inv: Array.isArray(obj.inv) ? obj.inv : [],
@@ -1415,11 +1362,10 @@
       }
 
       if (!data) { alert("Format non reconnu 😵‍💫"); return; }
-    
-      // 1) Données du profil
+
       setProfileData(id, data);
-    
-      // 2) Meta (nom/campagne) si présent dans le JSON
+
+      // applique aussi le nom / campagne si présent
       if (meta && (meta.name || meta.campaign)) {
         const profiles = getProfiles();
         const p = profiles.find(x => x.id === id);
@@ -1430,15 +1376,8 @@
         }
       }
 
-  loadActiveProfileToUI();
-  alert("Profil actif mis à jour ✅ (nom/campagne inclus si présents)");
-}
-
-      if (!data) { alert("Format non reconnu 😵‍💫"); return; }
-
-      setProfileData(id, data);
       loadActiveProfileToUI();
-      alert("Profil actif mis à jour ✅");
+      alert("Profil actif mis à jour ✅ (nom/campagne inclus si présents)");
     }
 
     const btnExportActive = $("exportActive");
@@ -1719,4 +1658,3 @@
   </script>
 </body>
 </html>
-```
