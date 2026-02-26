@@ -673,12 +673,13 @@
     }
     buildSkillsUI();
 
-    function sync20(rangeEl, fillEl, labelEl){
+    function syncGauge(rangeEl, fillEl, labelEl, max){
       if (!rangeEl || !fillEl || !labelEl) return;
       const v = Number(rangeEl.value);
-      const pct = Math.round((v/20)*100);
+      const m = Math.max(1, Number(max || rangeEl.max || 20));
+      const pct = Math.round((v / m) * 100);
       fillEl.style.width = `${pct}%`;
-      labelEl.textContent = `${v}/20`;
+      labelEl.textContent = `${v}/${m}`;
     }
 
     function renderSpecials(list){
@@ -719,21 +720,25 @@
       const sh = data.sheet || defaultProfileData().sheet;
 
       const pjHp = $("pjHp");
-      if (pjHp) pjHp.value = sh.hp20 ?? 10;
-      sync20(pjHp, $("pjHpFill"), $("pjHpLabel"));
-      if ($("pjWounds")) $("pjWounds").value = sh.wounds ?? "";
+      if ($("pjHpMax")) $("pjHpMax").value = sh.hpMax ?? 20;
+      if ($("pjHp")) { $("pjHp").max = String(sh.hpMax ?? 20); $("pjHp").value = sh.hp ?? 10; }
+      syncGauge($("pjHp"), $("pjHpFill"), $("pjHpLabel"), sh.hpMax);
+
 
       const pjSan = $("pjSan");
-      if (pjSan) pjSan.value = sh.san20 ?? 10;
-      sync20(pjSan, $("pjSanFill"), $("pjSanLabel"));
-      if ($("pjTroubles")) $("pjTroubles").value = sh.troubles ?? "";
-
+      if ($("pjSanMax")) $("pjSanMax").value = sh.sanMax ?? 20;
+      if ($("pjSan")) { $("pjSan").max = String(sh.sanMax ?? 20); $("pjSan").value = sh.san ?? 10; }
+      syncGauge($("pjSan"), $("pjSanFill"), $("pjSanLabel"), sh.sanMax);
+      
       const setStat = (key) => {
         const r = $(`stat_${key}`);
         const v = $(`stat_${key}_val`);
-        const val = sh.stats?.[key] ?? 10;
-        if (r) r.value = val;
-        if (v) v.textContent = String(val);
+        const m = $(`stat_${key}_max`);
+        const st = sh.stats?.[key] || { v:10, max:20 };
+      
+        if (m) m.value = st.max ?? 20;
+        if (r) { r.max = String(st.max ?? 20); r.value = st.v ?? 10; }
+        if (v) v.textContent = String(st.v ?? 10);
       };
       ["for","dex","end","int","intu"].forEach(setStat);
 
@@ -758,13 +763,27 @@
     function readSheetFromUI(){
       const sh = defaultProfileData().sheet;
 
-      sh.hp20 = Number($("pjHp")?.value || 10);
+      sh.hpMax = Number($("pjHpMax")?.value || 20);
+      sh.hp = Number($("pjHp")?.value || 0);
+      sh.hp = Math.max(0, Math.min(sh.hp, sh.hpMax));
       sh.wounds = $("pjWounds")?.value || "";
-      sh.san20 = Number($("pjSan")?.value || 10);
+      sh.sanMax = Number($("pjSanMax")?.value || 20);
+      sh.san = Number($("pjSan")?.value || 0);
+      sh.san = Math.max(0, Math.min(sh.san, sh.sanMax));
       sh.troubles = $("pjTroubles")?.value || "";
 
-      const getStat = (k) => Number($(`stat_${k}`)?.value || 10);
-      sh.stats = { for: getStat("for"), dex: getStat("dex"), end: getStat("end"), int: getStat("int"), intu: getStat("intu") };
+      const getStat = (k) => {
+        const max = Number($(`stat_${k}_max`)?.value || 20);
+        const v = Number($(`stat_${k}`)?.value || 0);
+        return { max, v: Math.max(0, Math.min(v, max)) };
+      };
+      sh.stats = {
+        for: getStat("for"),
+        dex: getStat("dex"),
+        end: getStat("end"),
+        int: getStat("int"),
+        intu: getStat("intu")
+      };
 
       const skills = {};
       document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
@@ -833,6 +852,17 @@
         if (r) r.addEventListener(evt, () => { if (v) v.textContent = r.value; saveSheet(); });
       });
 
+      ["pjHpMax","pjSanMax","stat_for_max","stat_dex_max","stat_end_max","stat_int_max","stat_intu_max"].forEach(id => {
+        const el = $(id);
+        if (!el) return;
+        el.addEventListener("change", () => {
+          // recharge depuis UI -> saveSheet() fait clamp + storage
+          saveSheet();
+          // re-render depuis storage (pour que sliders/labels suivent)
+          const pid = ensureActiveProfile();
+          loadSheetToUI(getProfileData(pid));    
+        });
+      });
       document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
         inp.addEventListener(evt, saveSheet);
       });
