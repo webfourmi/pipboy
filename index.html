@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0b1a12" />
-  <title>Pip-Boy Spatial v22</title>
+  <title>Pip-Boy Spatial v23</title>
 
-  <link rel="manifest" href="manifest.json?v=22">
+  <link rel="manifest" href="manifest.json?v=23">
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="icons/favicon.ico">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -76,38 +76,38 @@
 
           <!-- Caractéristiques -->
           <div class="card sub" style="grid-column: 1 / -1;">
-            <h3>Caractéristiques (0–20)</h3>
+            <h3>Caractéristiques (valeur / max)</h3>
 
             <div class="statsGrid">
-              <div class="statLine">
+              <div class="statLine" style="grid-template-columns: 70px 1fr 44px 74px;">
                 <div class="statName">FOR</div>
                 <input id="stat_for" type="range" min="0" max="20" value="10">
                 <div class="statVal" id="stat_for_val">10</div>
-                 <input id="stat_for_max" type="number" min="1" max="999" step="1" value="20" style="width:74px;">
+                <input id="stat_for_max" type="number" min="1" max="999" step="1" value="20" style="width:74px;">
               </div>
 
-              <div class="statLine">
+              <div class="statLine" style="grid-template-columns: 70px 1fr 44px 74px;">
                 <div class="statName">DEX</div>
                 <input id="stat_dex" type="range" min="0" max="20" value="10">
                 <div class="statVal" id="stat_dex_val">10</div>
                 <input id="stat_dex_max" type="number" min="1" max="999" step="1" value="20" style="width:74px;">
               </div>
 
-              <div class="statLine">
+              <div class="statLine" style="grid-template-columns: 70px 1fr 44px 74px;">
                 <div class="statName">END</div>
                 <input id="stat_end" type="range" min="0" max="20" value="10">
                 <div class="statVal" id="stat_end_val">10</div>
                 <input id="stat_end_max" type="number" min="1" max="999" step="1" value="20" style="width:74px;">
               </div>
 
-              <div class="statLine">
+              <div class="statLine" style="grid-template-columns: 70px 1fr 44px 74px;">
                 <div class="statName">INT</div>
                 <input id="stat_int" type="range" min="0" max="20" value="10">
                 <div class="statVal" id="stat_int_val">10</div>
                 <input id="stat_int_max" type="number" min="1" max="999" step="1" value="20" style="width:74px;">
               </div>
 
-              <div class="statLine">
+              <div class="statLine" style="grid-template-columns: 70px 1fr 44px 74px;">
                 <div class="statName">INTU</div>
                 <input id="stat_intu" type="range" min="0" max="20" value="10">
                 <div class="statVal" id="stat_intu_val">10</div>
@@ -139,7 +139,7 @@
 
               <label class="field">
                 <span>Protection</span>
-                <input id="combat_prot" type="number" min="0" max="99" step="1" value="0">
+                <input id="combat_prot" type="number" min="0" max="999" step="1" value="0">
               </label>
             </div>
 
@@ -371,7 +371,7 @@
   </main>
 
   <script>
-    const APP_VERSION = "v22";
+    const APP_VERSION = "v23";
 
     // Horloge
     function tick(){
@@ -430,7 +430,6 @@
       profileModal.classList.remove("show");
       profileModal.setAttribute("aria-hidden", "true");
     }
-
     if (openProfileBtn) openProfileBtn.addEventListener("click", openProfileModal);
     if (closeProfileBtn) closeProfileBtn.addEventListener("click", closeProfileModal);
     if (closeProfileBackdrop) closeProfileBackdrop.addEventListener("click", closeProfileModal);
@@ -451,12 +450,10 @@
       ioModal.classList.remove("show");
       ioModal.setAttribute("aria-hidden", "true");
     }
-
     if (openIOBtn) openIOBtn.addEventListener("click", openIOModal);
     if (closeIOBtn) closeIOBtn.addEventListener("click", closeIOModal);
     if (closeIOBackdrop) closeIOBackdrop.addEventListener("click", closeIOModal);
 
-    // ESC: ferme IO d'abord, sinon Profil
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
       if (ioModal && ioModal.classList.contains("show")) { closeIOModal(); return; }
@@ -505,12 +502,15 @@
             end: { v: 10, max: 20 },
             int: { v: 10, max: 20 },
             intu:{ v: 10, max: 20 }
+          },
           skills: {},
           combat: { ranged: 0, melee: 0, prot: 0, w1:{name:"", dmg:""}, w2:{name:"", dmg:""} },
           specials: []
         }
       };
     }
+
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
 
     function normalizeProfileData(d){
       const base = defaultProfileData();
@@ -520,31 +520,52 @@
       out.log = (typeof out.log === "string") ? out.log : "";
 
       out.sheet = Object.assign({}, base.sheet, (d && d.sheet) ? d.sheet : {});
-      out.sheet.stats = Object.assign({}, base.sheet.stats, (out.sheet.stats || {}));
+
+      // Compat: anciennes versions hp20/san20
+      if (out.sheet.hp === undefined && out.sheet.hp20 !== undefined) out.sheet.hp = out.sheet.hp20;
+      if (out.sheet.san === undefined && out.sheet.san20 !== undefined) out.sheet.san = out.sheet.san20;
+
+      out.sheet.hpMax = Number.isFinite(+out.sheet.hpMax) && +out.sheet.hpMax > 0 ? +out.sheet.hpMax : base.sheet.hpMax;
+      out.sheet.sanMax = Number.isFinite(+out.sheet.sanMax) && +out.sheet.sanMax > 0 ? +out.sheet.sanMax : base.sheet.sanMax;
+
+      out.sheet.hp = Number.isFinite(+out.sheet.hp) ? +out.sheet.hp : base.sheet.hp;
+      out.sheet.san = Number.isFinite(+out.sheet.san) ? +out.sheet.san : base.sheet.san;
+
+      out.sheet.hp = clamp(out.sheet.hp, 0, out.sheet.hpMax);
+      out.sheet.san = clamp(out.sheet.san, 0, out.sheet.sanMax);
+
+      out.sheet.wounds = (typeof out.sheet.wounds === "string") ? out.sheet.wounds : "";
+      out.sheet.troubles = (typeof out.sheet.troubles === "string") ? out.sheet.troubles : "";
+
+      // Skills
       out.sheet.skills = (out.sheet.skills && typeof out.sheet.skills === "object") ? out.sheet.skills : {};
+
+      // Combat
       out.sheet.combat = Object.assign({}, base.sheet.combat, (out.sheet.combat || {}));
       out.sheet.combat.w1 = Object.assign({}, base.sheet.combat.w1, (out.sheet.combat.w1 || {}));
       out.sheet.combat.w2 = Object.assign({}, base.sheet.combat.w2, (out.sheet.combat.w2 || {}));
-      out.sheet.specials = Array.isArray(out.sheet.specials) ? out.sheet.specials : [];
-      
-      out.sheet.hpMax = Number.isFinite(+out.sheet.hpMax) && +out.sheet.hpMax > 0 ? +out.sheet.hpMax : 20;
-      out.sheet.sanMax = Number.isFinite(+out.sheet.sanMax) && +out.sheet.sanMax > 0 ? +out.sheet.sanMax : 20;
-      out.sheet.hp = Number.isFinite(+out.sheet.hp) ? +out.sheet.hp : 10;
-      out.sheet.san = Number.isFinite(+out.sheet.san) ? +out.sheet.san : 10;
+      out.sheet.combat.ranged = Number.isFinite(+out.sheet.combat.ranged) ? +out.sheet.combat.ranged : 0;
+      out.sheet.combat.melee  = Number.isFinite(+out.sheet.combat.melee) ? +out.sheet.combat.melee : 0;
+      out.sheet.combat.prot   = Number.isFinite(+out.sheet.combat.prot) ? +out.sheet.combat.prot : 0;
 
-      // clamp
-      out.sheet.hp = Math.max(0, Math.min(out.sheet.hp, out.sheet.hpMax));
-      out.sheet.san = Math.max(0, Math.min(out.sheet.san, out.sheet.sanMax));
-      
-      // stats: assurer format {v,max}
-      const s = out.sheet.stats || {};
+      // Specials
+      out.sheet.specials = Array.isArray(out.sheet.specials) ? out.sheet.specials : [];
+
+      // Stats: compat + normalisation {v,max}
+      const s = (out.sheet.stats && typeof out.sheet.stats === "object") ? out.sheet.stats : {};
       ["for","dex","end","int","intu"].forEach(k => {
-        const cur = s[k];
-        if (typeof cur === "number") s[k] = { v: cur, max: 20 }; // compat ancienne version
-        if (!cur || typeof s[k] !== "object") s[k] = { v: 10, max: 20 };
-        s[k].max = Number.isFinite(+s[k].max) && +s[k].max > 0 ? +s[k].max : 20;
-        s[k].v = Number.isFinite(+s[k].v) ? +s[k].v : 10;
-        s[k].v = Math.max(0, Math.min(s[k].v, s[k].max));
+        let cur = s[k];
+
+        // compat: ancienne version -> nombre
+        if (typeof cur === "number") cur = { v: cur, max: 20 };
+
+        if (!cur || typeof cur !== "object") cur = { v: base.sheet.stats[k].v, max: base.sheet.stats[k].max };
+
+        cur.max = Number.isFinite(+cur.max) && +cur.max > 0 ? +cur.max : base.sheet.stats[k].max;
+        cur.v = Number.isFinite(+cur.v) ? +cur.v : base.sheet.stats[k].v;
+        cur.v = clamp(cur.v, 0, cur.max);
+
+        s[k] = cur;
       });
       out.sheet.stats = s;
 
@@ -719,35 +740,39 @@
     function loadSheetToUI(data){
       const sh = data.sheet || defaultProfileData().sheet;
 
-      const pjHp = $("pjHp");
+      // PV
       if ($("pjHpMax")) $("pjHpMax").value = sh.hpMax ?? 20;
-      if ($("pjHp")) { $("pjHp").max = String(sh.hpMax ?? 20); $("pjHp").value = sh.hp ?? 10; }
+      if ($("pjHp")) { $("pjHp").max = String(sh.hpMax ?? 20); $("pjHp").value = sh.hp ?? 0; }
       syncGauge($("pjHp"), $("pjHpFill"), $("pjHpLabel"), sh.hpMax);
+      if ($("pjWounds")) $("pjWounds").value = sh.wounds ?? "";
 
-
-      const pjSan = $("pjSan");
+      // SAN
       if ($("pjSanMax")) $("pjSanMax").value = sh.sanMax ?? 20;
-      if ($("pjSan")) { $("pjSan").max = String(sh.sanMax ?? 20); $("pjSan").value = sh.san ?? 10; }
+      if ($("pjSan")) { $("pjSan").max = String(sh.sanMax ?? 20); $("pjSan").value = sh.san ?? 0; }
       syncGauge($("pjSan"), $("pjSanFill"), $("pjSanLabel"), sh.sanMax);
-      
+      if ($("pjTroubles")) $("pjTroubles").value = sh.troubles ?? "";
+
+      // Stats
       const setStat = (key) => {
         const r = $(`stat_${key}`);
         const v = $(`stat_${key}_val`);
         const m = $(`stat_${key}_max`);
         const st = sh.stats?.[key] || { v:10, max:20 };
-      
+
         if (m) m.value = st.max ?? 20;
         if (r) { r.max = String(st.max ?? 20); r.value = st.v ?? 10; }
         if (v) v.textContent = String(st.v ?? 10);
       };
       ["for","dex","end","int","intu"].forEach(setStat);
 
+      // Skills
       const skills = sh.skills || {};
       document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
         const k = inp.getAttribute("data-skill");
         inp.value = Number(skills[k] ?? 0);
       });
 
+      // Combat
       if ($("combat_ranged")) $("combat_ranged").value = Number(sh.combat?.ranged ?? 0);
       if ($("combat_melee")) $("combat_melee").value = Number(sh.combat?.melee ?? 0);
       if ($("combat_prot")) $("combat_prot").value = Number(sh.combat?.prot ?? 0);
@@ -765,18 +790,20 @@
 
       sh.hpMax = Number($("pjHpMax")?.value || 20);
       sh.hp = Number($("pjHp")?.value || 0);
-      sh.hp = Math.max(0, Math.min(sh.hp, sh.hpMax));
+      sh.hp = clamp(sh.hp, 0, sh.hpMax);
       sh.wounds = $("pjWounds")?.value || "";
+
       sh.sanMax = Number($("pjSanMax")?.value || 20);
       sh.san = Number($("pjSan")?.value || 0);
-      sh.san = Math.max(0, Math.min(sh.san, sh.sanMax));
+      sh.san = clamp(sh.san, 0, sh.sanMax);
       sh.troubles = $("pjTroubles")?.value || "";
 
       const getStat = (k) => {
         const max = Number($(`stat_${k}_max`)?.value || 20);
         const v = Number($(`stat_${k}`)?.value || 0);
-        return { max, v: Math.max(0, Math.min(v, max)) };
+        return { max: Math.max(1, max), v: clamp(v, 0, Math.max(1, max)) };
       };
+
       sh.stats = {
         for: getStat("for"),
         dex: getStat("dex"),
@@ -800,6 +827,7 @@
         w2: { name: $("w2_name")?.value || "", dmg: $("w2_dmg")?.value || "" }
       };
 
+      // specials: on garde la liste stockée
       const id = ensureActiveProfile();
       const data = id ? getProfileData(id) : defaultProfileData();
       sh.specials = Array.isArray(data.sheet?.specials) ? data.sheet.specials : [];
@@ -843,33 +871,23 @@
       const pjHp = $("pjHp");
       const pjSan = $("pjSan");
 
-      if (pjHp) pjHp.addEventListener(evt, () => { sync20(pjHp, $("pjHpFill"), $("pjHpLabel")); saveSheet(); });
-      if (pjSan) pjSan.addEventListener(evt, () => { sync20(pjSan, $("pjSanFill"), $("pjSanLabel")); saveSheet(); });
+      if (pjHp) pjHp.addEventListener(evt, () => { saveSheet(); const d = getProfileData(ensureActiveProfile()); loadSheetToUI(d); });
+      if (pjSan) pjSan.addEventListener(evt, () => { saveSheet(); const d = getProfileData(ensureActiveProfile()); loadSheetToUI(d); });
+
+      ["pjHpMax","pjSanMax","pjWounds","pjTroubles","combat_ranged","combat_melee","combat_prot","w1_name","w1_dmg","w2_name","w2_dmg"].forEach(id => {
+        const el = $(id);
+        if (el) el.addEventListener(evt, () => { saveSheet(); const d = getProfileData(ensureActiveProfile()); loadSheetToUI(d); });
+      });
 
       ["for","dex","end","int","intu"].forEach(k => {
         const r = $(`stat_${k}`);
-        const v = $(`stat_${k}_val`);
-        if (r) r.addEventListener(evt, () => { if (v) v.textContent = r.value; saveSheet(); });
+        const m = $(`stat_${k}_max`);
+        if (r) r.addEventListener(evt, () => { saveSheet(); const d = getProfileData(ensureActiveProfile()); loadSheetToUI(d); });
+        if (m) m.addEventListener(evt, () => { saveSheet(); const d = getProfileData(ensureActiveProfile()); loadSheetToUI(d); });
       });
 
-      ["pjHpMax","pjSanMax","stat_for_max","stat_dex_max","stat_end_max","stat_int_max","stat_intu_max"].forEach(id => {
-        const el = $(id);
-        if (!el) return;
-        el.addEventListener("change", () => {
-          // recharge depuis UI -> saveSheet() fait clamp + storage
-          saveSheet();
-          // re-render depuis storage (pour que sliders/labels suivent)
-          const pid = ensureActiveProfile();
-          loadSheetToUI(getProfileData(pid));    
-        });
-      });
       document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
         inp.addEventListener(evt, saveSheet);
-      });
-
-      ["combat_ranged","combat_melee","combat_prot","w1_name","w1_dmg","w2_name","w2_dmg","pjWounds","pjTroubles"].forEach(id => {
-        const el = $(id);
-        if (el) el.addEventListener(evt, saveSheet);
       });
     });
 
@@ -1183,7 +1201,7 @@
         `PIPBOY ${APP_VERSION}`,
         `Profil: ${(meta && meta.name) ? meta.name : "?"} (${id || "no-id"})`,
         `Campagne: ${(meta && meta.campaign) ? meta.campaign : "—"}`,
-        `PV: ${sh.hp20 ?? "?"}/20 | SAN: ${sh.san20 ?? "?"}/20`,
+        `PV: ${sh.hp}/${sh.hpMax} | SAN: ${sh.san}/${sh.sanMax}`,
         `Quetes: EN_COURS ${cEn} | OK ${cOk} | RATEE ${cRa}`,
         `URL: ${location.href}`,
         `UA: ${navigator.userAgent}`
