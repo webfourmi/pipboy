@@ -385,3 +385,73 @@ textarea#backupProfileBox{
   padding: 8px 10px;
   background: rgba(0,0,0,.15);
 }
+.boot{
+  position:fixed; inset:0; z-index:10000;
+  display:none;
+  background: radial-gradient(circle at 50% 30%, rgba(20,80,55,.18), rgba(0,0,0,.92));
+  color:#b7ffd9;
+}
+.boot.show{ display:flex; align-items:center; justify-content:center; }
+
+.bootInner{
+  width:min(720px, calc(100vw - 28px));
+  border:1px solid rgba(183,255,217,.22);
+  border-radius:18px;
+  padding:18px 16px;
+  background: rgba(8, 20, 14, .92);
+  box-shadow: 0 12px 44px rgba(0,0,0,.6);
+  position:relative;
+  overflow:hidden;
+}
+
+/* scanlines */
+.bootInner::before{
+  content:"";
+  position:absolute; inset:-40px 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(183,255,217,.06) 0px,
+    rgba(183,255,217,.06) 1px,
+    rgba(0,0,0,0) 5px,
+    rgba(0,0,0,0) 10px
+  );
+  opacity:.25;
+  animation: bootScan 1.6s linear infinite;
+  pointer-events:none;
+}
+@keyframes bootScan{
+  0%{ transform: translateY(-20px); }
+  100%{ transform: translateY(20px); }
+}
+
+.bootBrand{
+  font-weight:900;
+  letter-spacing:.18em;
+  font-size:18px;
+  margin-bottom:12px;
+}
+
+.bootLines{ display:flex; flex-direction:column; gap:6px; }
+.bootLine{ opacity:.9; font-size:13px; }
+.bootLine:nth-child(1){ opacity:1; }
+
+.bootBar{
+  margin-top:14px;
+  height:12px;
+  border-radius:999px;
+  border:1px solid rgba(183,255,217,.22);
+  background: rgba(0,0,0,.35);
+  overflow:hidden;
+}
+.bootFill{
+  height:100%;
+  width:0%;
+  background: rgba(183,255,217,.75);
+  filter: drop-shadow(0 0 8px rgba(183,255,217,.35));
+}
+
+.bootHint{
+  margin-top:10px;
+  font-size:12px;
+  opacity:.7;
+}
