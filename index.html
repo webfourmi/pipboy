@@ -59,7 +59,11 @@
 
       <!-- FICHE PJ -->
       <div class="card">
-        <h2>Fiche PJ</h2>
+        <div class="sheetHead">
+          <h2 style="margin:0;">Fiche PJ</h2>
+          <button id="toggleSheetLock" class="miniBtn" type="button" aria-pressed="false">🔓 ÉDITION</button>
+        </div>
+        <p class="tiny" id="sheetLockHint" style="margin:8px 0 0; display:none;">Édition verrouillée: PV/SAN, caracs, compétences.</p>
 
         <div class="gridSheet">
           <!-- PV -->
