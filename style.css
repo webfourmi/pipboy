@@ -472,3 +472,24 @@ textarea#backupProfileBox{
 @media (prefers-reduced-motion: reduce){
   #boot .bootInner::before{ animation: none; }
 }
+.maxBox{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  width: 90px;
+  min-width: 90px;
+}
+
+.maxLabel{
+  font-size:11px;
+  letter-spacing:.12em;
+  color: var(--muted);
+  opacity:.95;
+}
+
+.maxBox input{
+  width:100%;
+  text-align:center;
+  padding:10px 8px;
+  border-radius:12px;
+}
