@@ -1,4 +1,4 @@
-// sw.js — PipBoy PWA (v25)
+// sw.js — PipBoy PWA (v26)
 // Stratégie:
 // - HTML: network-first (pour éviter les vieilles versions qui collent)
 // - CSS/JS/images/icons: cache-first (rapide + offline)
