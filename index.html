@@ -66,27 +66,29 @@
           <div class="card sub">
             <h3>Points de vie</h3>
             <div class="bar"><div class="barfill" id="pjHpFill" style="width:50%"></div></div>
-            <div class="row">
-              <input id="pjHp" type="range" min="0" max="20" value="10">
-              <span id="pjHpLabel">10/20</span>
-              <input id="pjHpMax" type="number" min="1" max="999" step="1" value="20" style="width:84px;">
-            </div>
-            <p class="hint">Max PV</p>
-            <textarea id="pjWounds" rows="2" placeholder="Blessures (description)…"></textarea>
+           <div class="row" style="align-items:flex-end;">
+            <input id="pjHp" type="range" min="0" max="20" value="10">
+            <span id="pjHpLabel">10/20</span>
+          
+            <label class="maxBox">
+              <span class="maxLabel">MAX PV</span>
+              <input id="pjHpMax" type="number" min="1" max="999" step="1" value="20">
+            </label>
           </div>
 
           <!-- SAN -->
           <div class="card sub">
             <h3>Santé mentale</h3>
             <div class="bar"><div class="barfill" id="pjSanFill" style="width:50%"></div></div>
-            <div class="row">
+            <div class="row" style="align-items:flex-end;">
               <input id="pjSan" type="range" min="0" max="20" value="10">
               <span id="pjSanLabel">10/20</span>
-              <input id="pjSanMax" type="number" min="1" max="999" step="1" value="20" style="width:84px;">
+            
+              <label class="maxBox">
+                <span class="maxLabel">MAX SAN</span>
+                <input id="pjSanMax" type="number" min="1" max="999" step="1" value="20">
+              </label>
             </div>
-            <p class="hint">Max SAN</p>
-            <textarea id="pjTroubles" rows="2" placeholder="Troubles mentaux (description)…"></textarea>
-          </div>
 
           <!-- Caractéristiques -->
           <div class="card sub" style="grid-column: 1 / -1;">
