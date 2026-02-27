@@ -386,7 +386,42 @@
 
   <script>
     const APP_VERSION = "v23";
+    // BOOT SCREEN (affiché une seule fois par appareil)
+    (function(){
+    const boot = document.getElementById("boot");
+    const fill = document.getElementById("bootFill");
+    if (!boot || !fill) return;
 
+    const key = "pipboy_boot_done";
+    const already = localStorage.getItem(key) === "1";
+
+  // si tu veux qu'il s'affiche à chaque fois, commente ces 3 lignes :
+  if (already){
+    boot.classList.remove("show");
+    boot.setAttribute("aria-hidden","true");
+    return;
+  }
+
+  let p = 0;
+  const tick = () => {
+    p = Math.min(100, p + (6 + Math.random()*10));
+    fill.style.width = p + "%";
+    if (p >= 100){
+      finish();
+    } else {
+      setTimeout(tick, 160);
+    }
+  };
+
+  const finish = () => {
+    localStorage.setItem(key, "1");
+    boot.classList.remove("show");
+    boot.setAttribute("aria-hidden","true");
+  };
+
+  boot.addEventListener("click", finish, { once:true });
+  setTimeout(tick, 220);
+})();
     // Horloge
     function tick(){
       const d = new Date();
