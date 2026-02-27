@@ -391,7 +391,7 @@
   </main>
 
   <script>
-    const APP_VERSION = "v24";
+    const APP_VERSION = "v25";
     // BOOT SCREEN (1 fois par session)
 (function(){
   const boot = document.getElementById("boot");
@@ -558,6 +558,7 @@
         inv: [],
         quests: [],
         sheet: {
+          locked: false,
           hp: 10,
           hpMax: 20,
           wounds: "",
@@ -588,6 +589,7 @@
       out.log = (typeof out.log === "string") ? out.log : "";
 
       out.sheet = Object.assign({}, base.sheet, (d && d.sheet) ? d.sheet : {});
+      out.sheet.locked = !!out.sheet.locked;
 
       // Compat: anciennes versions hp20/san20
       if (out.sheet.hp === undefined && out.sheet.hp20 !== undefined) out.sheet.hp = out.sheet.hp20;
@@ -715,6 +717,70 @@
       }
       return activeId;
     }
+    function setDisabled(ids, disabled){
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !!disabled;
+  });
+}
+
+function setDisabledSelector(selector, disabled){
+  document.querySelectorAll(selector).forEach(el => { el.disabled = !!disabled; });
+}
+
+function applySheetLockUI(locked){
+  const btn = $("toggleSheetLock");
+  const hint = $("sheetLockHint");
+
+  if (btn){
+    btn.textContent = locked ? "🔒 ÉDITION" : "🔓 ÉDITION";
+    btn.setAttribute("aria-pressed", locked ? "true" : "false");
+    btn.classList.toggle("danger", locked);
+  }
+  if (hint){
+    hint.style.display = locked ? "block" : "none";
+  }
+
+  // PV/SAN: verrouille slider + max
+  setDisabled(["pjHp","pjHpMax","pjSan","pjSanMax"], locked);
+
+  // Caracs: valeur + max
+  setDisabled([
+    "stat_for","stat_for_max",
+    "stat_dex","stat_dex_max",
+    "stat_end","stat_end_max",
+    "stat_int","stat_int_max",
+    "stat_intu","stat_intu_max"
+  ], locked);
+
+  // Compétences (%)
+  setDisabledSelector('#skillsGrid input[data-skill]', locked);
+
+  // (Optionnel) Combat aussi ? -> si tu veux, dis-moi, je l’ajoute.
+  // setDisabled(["combat_ranged","combat_melee","combat_prot","w1_name","w1_dmg","w2_name","w2_dmg"], locked);
+
+  // Griser les blocs sensibles
+  const cardsToDim = [
+    $("pjHp")?.closest(".card.sub"),
+    $("pjSan")?.closest(".card.sub"),
+    $("stat_for")?.closest(".card.sub"),
+    $("skillsGrid")?.closest(".card.sub")
+  ].filter(Boolean);
+
+  cardsToDim.forEach(c => c.classList.toggle("lockedDim", locked));
+}
+
+function toggleSheetLock(){
+  const id = ensureActiveProfile();
+  if (!id) return;
+  const data = getProfileData(id);
+
+  data.sheet = data.sheet || defaultProfileData().sheet;
+  data.sheet.locked = !data.sheet.locked;
+
+  setProfileData(id, data);
+  applySheetLockUI(data.sheet.locked);
+}
 
     // ===== FICHE PJ =====
     const SKILLS = [
@@ -851,6 +917,7 @@
       if ($("w2_dmg")) $("w2_dmg").value = sh.combat?.w2?.dmg ?? "";
 
       renderSpecials(sh.specials || []);
+      applySheetLockUI(!!(data.sheet && data.sheet.locked));
     }
 
     function readSheetFromUI(){
@@ -906,7 +973,15 @@
     function saveSheet(){
       const id = ensureActiveProfile();
       if (!id) return;
-      const data = getProfileData(id);
+    
+      const current = getProfileData(id);
+      if (current.sheet && current.sheet.locked){
+        // verrouillé: on ignore les changements (sécurité)
+        applySheetLockUI(true);
+        return;
+      }
+    
+      const data = current;
       data.sheet = readSheetFromUI();
       setProfileData(id, data);
     }
