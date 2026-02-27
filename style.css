@@ -31,6 +31,28 @@ body{
 .brand{ letter-spacing:1px; }
 .clock{ color:var(--muted); }
 
+/* Topbar actions */
+.topbarActions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.miniBtn{
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(183,255,217,.35);
+  background: rgba(10, 30, 20, .55);
+  color: #b7ffd9;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.miniBtn.danger{
+  border-color: rgba(255, 90, 90, .45);
+  color: rgba(255, 140, 140, 1);
+}
+
 /* CONTENEUR PRINCIPAL */
 .shell{
   padding: 12px 12px 18px;
@@ -116,7 +138,7 @@ h2{ font-size:14px; margin:0 0 10px; color:var(--text); }
 input[type="range"]{ width:100%; }
 
 /* INPUTS */
-select, input[type="text"], textarea{
+select, input[type="text"], input[type="number"], textarea{
   width:100%;
   background: rgba(7,18,12,.75);
   border:1px solid rgba(31,227,138,.25);
@@ -226,6 +248,8 @@ textarea#backupProfileBox{
   letter-spacing: 6px;
   fill: var(--text);
 }
+
+/* Quêtes */
 .questSection{ margin-top: 6px; }
 .questSectionTitle{
   color: var(--muted);
@@ -233,39 +257,16 @@ textarea#backupProfileBox{
   letter-spacing: 1px;
   padding: 6px 2px;
 }
-/* Topbar actions */
-.topbarActions{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-
-.miniBtn{
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(183,255,217,.35);
-  background: rgba(10, 30, 20, .55);
-  color: #b7ffd9;
-  font-weight: 700;
-  letter-spacing: .08em;
-}
-
-.miniBtn.danger{
-  border-color: rgba(255, 90, 90, .45);
-  color: rgba(255, 140, 140, 1);
-}
 
 /* Modal */
 .modal{
   position: fixed;
   inset: 0;
   display: none;
-  z-index: 9999;
+  z-index: 9999; /* en dessous du BOOT */
 }
 
-.modal.show{
-  display: block;
-}
+.modal.show{ display: block; }
 
 .modalBackdrop{
   position: absolute;
@@ -304,9 +305,7 @@ textarea#backupProfileBox{
   letter-spacing: .14em;
 }
 
-.modalBody{
-  padding: 12px;
-}
+.modalBody{ padding: 12px; }
 
 /* Fiche PJ layout */
 .gridSheet{
@@ -385,27 +384,38 @@ textarea#backupProfileBox{
   padding: 8px 10px;
   background: rgba(0,0,0,.15);
 }
-.boot{
-  position:fixed; inset:0; z-index:10000;
-  display:none;
-  background: radial-gradient(circle at 50% 30%, rgba(20,80,55,.18), rgba(0,0,0,.92));
-  color:#b7ffd9;
-}
-.boot.show{ display:flex; align-items:center; justify-content:center; }
 
-.bootInner{
-  width:min(720px, calc(100vw - 28px));
-  border:1px solid rgba(183,255,217,.22);
-  border-radius:18px;
-  padding:18px 16px;
+/* =========================================
+   BOOT OVERLAY (FIX)
+   Utilise #boot pour éviter toute collision
+   ========================================= */
+#boot{
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 30%, rgba(20,80,55,.18), rgba(0,0,0,.92));
+  color: #b7ffd9;
+}
+
+#boot.show{
+  display: flex !important;
+}
+
+#boot .bootInner{
+  width: min(720px, calc(100vw - 28px));
+  border: 1px solid rgba(183,255,217,.22);
+  border-radius: 18px;
+  padding: 18px 16px;
   background: rgba(8, 20, 14, .92);
   box-shadow: 0 12px 44px rgba(0,0,0,.6);
-  position:relative;
-  overflow:hidden;
+  position: relative;
+  overflow: hidden;
 }
 
-/* scanlines */
-.bootInner::before{
+#boot .bootInner::before{
   content:"";
   position:absolute; inset:-40px 0;
   background: repeating-linear-gradient(
@@ -419,23 +429,24 @@ textarea#backupProfileBox{
   animation: bootScan 1.6s linear infinite;
   pointer-events:none;
 }
+
 @keyframes bootScan{
   0%{ transform: translateY(-20px); }
   100%{ transform: translateY(20px); }
 }
 
-.bootBrand{
+#boot .bootBrand{
   font-weight:900;
   letter-spacing:.18em;
   font-size:18px;
   margin-bottom:12px;
 }
 
-.bootLines{ display:flex; flex-direction:column; gap:6px; }
-.bootLine{ opacity:.9; font-size:13px; }
-.bootLine:nth-child(1){ opacity:1; }
+#boot .bootLines{ display:flex; flex-direction:column; gap:6px; }
+#boot .bootLine{ opacity:.9; font-size:13px; }
+#boot .bootLine:nth-child(1){ opacity:1; }
 
-.bootBar{
+#boot .bootBar{
   margin-top:14px;
   height:12px;
   border-radius:999px;
@@ -443,15 +454,21 @@ textarea#backupProfileBox{
   background: rgba(0,0,0,.35);
   overflow:hidden;
 }
-.bootFill{
+
+#boot .bootFill{
   height:100%;
   width:0%;
   background: rgba(183,255,217,.75);
   filter: drop-shadow(0 0 8px rgba(183,255,217,.35));
 }
 
-.bootHint{
+#boot .bootHint{
   margin-top:10px;
   font-size:12px;
   opacity:.7;
+}
+
+/* Accessibilité: si l'utilisateur réduit les animations */
+@media (prefers-reduced-motion: reduce){
+  #boot .bootInner::before{ animation: none; }
 }
