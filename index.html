@@ -4,29 +4,31 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0b1a12" />
-  <title>Pip-Boy Spatial v23</title>
+  <title>Pip-Boy Spatial v26</title>
 
-  <link rel="manifest" href="manifest.json?v=23">
+  <link rel="manifest" href="manifest.json?v=26">
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="icons/favicon.ico">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
 </head>
 
 <body>
+  <!-- BOOT OVERLAY -->
   <div id="boot" class="boot show" aria-hidden="false">
-   <div class="bootInner">
-    <div class="bootBrand">PIP-BOY // ORION</div>
-    <div class="bootLines">
-      <div class="bootLine">INITIALISATION…</div>
-      <div class="bootLine">CHARGEMENT MODULES: STATUS / DATA / INV</div>
-      <div class="bootLine">VÉRIF MEMOIRE LOCALE… OK</div>
-      <div class="bootLine">SYNC PROFIL… OK</div>
-      <div class="bootLine">DÉMARRAGE INTERFACE</div>
+    <div class="bootInner">
+      <div class="bootBrand">PIP-BOY // ORION</div>
+      <div class="bootLines">
+        <div class="bootLine">INITIALISATION…</div>
+        <div class="bootLine">CHARGEMENT MODULES: STATUS / DATA / INV</div>
+        <div class="bootLine">VÉRIF MEMOIRE LOCALE… OK</div>
+        <div class="bootLine">SYNC PROFIL… OK</div>
+        <div class="bootLine">DÉMARRAGE INTERFACE</div>
+      </div>
+      <div class="bootBar"><div id="bootFill" class="bootFill"></div></div>
+      <div class="bootHint">Touchez pour passer</div>
     </div>
-     <div class="bootBar"><div id="bootFill" class="bootFill"></div></div>
-     <div class="bootHint">Touchez pour passer</div>
-    </div>
- </div>
+  </div>
+
   <header class="topbar">
     <div class="brand">PIP-BOY // ORION</div>
 
@@ -66,33 +68,42 @@
         <p class="tiny" id="sheetLockHint" style="margin:8px 0 0; display:none;">Édition verrouillée: PV/SAN, caracs, compétences.</p>
 
         <div class="gridSheet">
+
           <!-- PV -->
           <div class="card sub">
             <h3>Points de vie</h3>
             <div class="bar"><div class="barfill" id="pjHpFill" style="width:50%"></div></div>
-           <div class="row" style="align-items:flex-end;">
-            <input id="pjHp" type="range" min="0" max="20" value="10">
-            <span id="pjHpLabel">10/20</span>
-          
-            <label class="maxBox">
-              <span class="maxLabel">MAX PV</span>
-              <input id="pjHpMax" type="number" min="1" max="999" step="1" value="20">
-            </label>
+
+            <div class="row" style="align-items:flex-end;">
+              <input id="pjHp" type="range" min="0" max="20" value="10">
+              <span id="pjHpLabel">10/20</span>
+
+              <label class="maxBox">
+                <span class="maxLabel">MAX PV</span>
+                <input id="pjHpMax" type="number" min="1" max="999" step="1" value="20">
+              </label>
+            </div>
+
+            <textarea id="pjWounds" rows="2" placeholder="Blessures (description)…"></textarea>
           </div>
 
           <!-- SAN -->
           <div class="card sub">
             <h3>Santé mentale</h3>
             <div class="bar"><div class="barfill" id="pjSanFill" style="width:50%"></div></div>
+
             <div class="row" style="align-items:flex-end;">
               <input id="pjSan" type="range" min="0" max="20" value="10">
               <span id="pjSanLabel">10/20</span>
-            
+
               <label class="maxBox">
                 <span class="maxLabel">MAX SAN</span>
                 <input id="pjSanMax" type="number" min="1" max="999" step="1" value="20">
               </label>
             </div>
+
+            <textarea id="pjTroubles" rows="2" placeholder="Troubles mentaux (description)…"></textarea>
+          </div>
 
           <!-- Caractéristiques -->
           <div class="card sub" style="grid-column: 1 / -1;">
@@ -391,56 +402,51 @@
   </main>
 
   <script>
-    const APP_VERSION = "v25";
+    const APP_VERSION = "v26";
+
     // BOOT SCREEN (1 fois par session)
-(function(){
-  const boot = document.getElementById("boot");
-  const fill = document.getElementById("bootFill");
-  if (!boot) return;
+    (function(){
+      const boot = document.getElementById("boot");
+      const fill = document.getElementById("bootFill");
+      if (!boot) return;
 
-  const KEY = "pipboy_boot_session_done";
+      const KEY = "pipboy_boot_session_done";
 
-  const hide = () => {
-    boot.classList.remove("show");
-    boot.setAttribute("aria-hidden", "true");
-    // marque la session comme "déjà fait"
-    try { sessionStorage.setItem(KEY, "1"); } catch {}
-  };
+      const hide = () => {
+        boot.classList.remove("show");
+        boot.setAttribute("aria-hidden", "true");
+        try { sessionStorage.setItem(KEY, "1"); } catch {}
+      };
 
-  // si déjà affiché pendant cette session → ne rien montrer
-  try {
-    if (sessionStorage.getItem(KEY) === "1") {
-      boot.classList.remove("show");
-      boot.setAttribute("aria-hidden", "true");
-      return;
-    }
-  } catch {
-    // si sessionStorage est bloqué, on laisse l'intro (fallback)
-  }
+      try {
+        if (sessionStorage.getItem(KEY) === "1") {
+          boot.classList.remove("show");
+          boot.setAttribute("aria-hidden", "true");
+          return;
+        }
+      } catch {}
 
-  // show
-  boot.classList.add("show");
-  boot.setAttribute("aria-hidden","false");
+      boot.classList.add("show");
+      boot.setAttribute("aria-hidden","false");
 
-  // clique = skip
-  boot.addEventListener("click", hide, { once:true });
+      boot.addEventListener("click", hide, { once:true });
 
-  // barre de progression
-  if (!fill){
-    setTimeout(hide, 900);
-    return;
-  }
+      if (!fill){
+        setTimeout(hide, 900);
+        return;
+      }
 
-  let p = 0;
-  const tick = () => {
-    p = Math.min(100, p + (10 + Math.random()*14));
-    fill.style.width = p + "%";
-    if (p >= 100) hide();
-    else setTimeout(tick, 140);
-  };
+      let p = 0;
+      const tick = () => {
+        p = Math.min(100, p + (10 + Math.random()*14));
+        fill.style.width = p + "%";
+        if (p >= 100) hide();
+        else setTimeout(tick, 140);
+      };
 
-  setTimeout(tick, 180);
-})();
+      setTimeout(tick, 180);
+    })();
+
     // Horloge
     function tick(){
       const d = new Date();
@@ -591,7 +597,6 @@
       out.sheet = Object.assign({}, base.sheet, (d && d.sheet) ? d.sheet : {});
       out.sheet.locked = !!out.sheet.locked;
 
-      // Compat: anciennes versions hp20/san20
       if (out.sheet.hp === undefined && out.sheet.hp20 !== undefined) out.sheet.hp = out.sheet.hp20;
       if (out.sheet.san === undefined && out.sheet.san20 !== undefined) out.sheet.san = out.sheet.san20;
 
@@ -607,10 +612,8 @@
       out.sheet.wounds = (typeof out.sheet.wounds === "string") ? out.sheet.wounds : "";
       out.sheet.troubles = (typeof out.sheet.troubles === "string") ? out.sheet.troubles : "";
 
-      // Skills
       out.sheet.skills = (out.sheet.skills && typeof out.sheet.skills === "object") ? out.sheet.skills : {};
 
-      // Combat
       out.sheet.combat = Object.assign({}, base.sheet.combat, (out.sheet.combat || {}));
       out.sheet.combat.w1 = Object.assign({}, base.sheet.combat.w1, (out.sheet.combat.w1 || {}));
       out.sheet.combat.w2 = Object.assign({}, base.sheet.combat.w2, (out.sheet.combat.w2 || {}));
@@ -618,23 +621,16 @@
       out.sheet.combat.melee  = Number.isFinite(+out.sheet.combat.melee) ? +out.sheet.combat.melee : 0;
       out.sheet.combat.prot   = Number.isFinite(+out.sheet.combat.prot) ? +out.sheet.combat.prot : 0;
 
-      // Specials
       out.sheet.specials = Array.isArray(out.sheet.specials) ? out.sheet.specials : [];
 
-      // Stats: compat + normalisation {v,max}
       const s = (out.sheet.stats && typeof out.sheet.stats === "object") ? out.sheet.stats : {};
       ["for","dex","end","int","intu"].forEach(k => {
         let cur = s[k];
-
-        // compat: ancienne version -> nombre
         if (typeof cur === "number") cur = { v: cur, max: 20 };
-
         if (!cur || typeof cur !== "object") cur = { v: base.sheet.stats[k].v, max: base.sheet.stats[k].max };
-
         cur.max = Number.isFinite(+cur.max) && +cur.max > 0 ? +cur.max : base.sheet.stats[k].max;
         cur.v = Number.isFinite(+cur.v) ? +cur.v : base.sheet.stats[k].v;
         cur.v = clamp(cur.v, 0, cur.max);
-
         s[k] = cur;
       });
       out.sheet.stats = s;
@@ -651,7 +647,6 @@
     function setProfileData(id, data){ store.set(profileKey(id), normalizeProfileData(data)); }
     function deleteProfileData(id){ store.del(profileKey(id)); }
 
-    // Migration ancien format -> profil P1 (log/inv uniquement)
     function migrateIfNeeded(){
       const profiles = getProfiles();
       if (profiles.length > 0) return;
@@ -717,70 +712,65 @@
       }
       return activeId;
     }
+
+    // ===== LOCK UI =====
     function setDisabled(ids, disabled){
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = !!disabled;
-  });
-}
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !!disabled;
+      });
+    }
+    function setDisabledSelector(selector, disabled){
+      document.querySelectorAll(selector).forEach(el => { el.disabled = !!disabled; });
+    }
+    function applySheetLockUI(locked){
+      const btn = $("toggleSheetLock");
+      const hint = $("sheetLockHint");
 
-function setDisabledSelector(selector, disabled){
-  document.querySelectorAll(selector).forEach(el => { el.disabled = !!disabled; });
-}
+      if (btn){
+        btn.textContent = locked ? "🔒 ÉDITION" : "🔓 ÉDITION";
+        btn.setAttribute("aria-pressed", locked ? "true" : "false");
+        btn.classList.toggle("danger", locked);
+      }
+      if (hint){
+        hint.style.display = locked ? "block" : "none";
+      }
 
-function applySheetLockUI(locked){
-  const btn = $("toggleSheetLock");
-  const hint = $("sheetLockHint");
+      setDisabled(["pjHp","pjHpMax","pjSan","pjSanMax"], locked);
 
-  if (btn){
-    btn.textContent = locked ? "🔒 ÉDITION" : "🔓 ÉDITION";
-    btn.setAttribute("aria-pressed", locked ? "true" : "false");
-    btn.classList.toggle("danger", locked);
-  }
-  if (hint){
-    hint.style.display = locked ? "block" : "none";
-  }
+      setDisabled([
+        "stat_for","stat_for_max",
+        "stat_dex","stat_dex_max",
+        "stat_end","stat_end_max",
+        "stat_int","stat_int_max",
+        "stat_intu","stat_intu_max"
+      ], locked);
 
-  // PV/SAN: verrouille slider + max
-  setDisabled(["pjHp","pjHpMax","pjSan","pjSanMax"], locked);
+      setDisabledSelector('#skillsGrid input[data-skill]', locked);
 
-  // Caracs: valeur + max
-  setDisabled([
-    "stat_for","stat_for_max",
-    "stat_dex","stat_dex_max",
-    "stat_end","stat_end_max",
-    "stat_int","stat_int_max",
-    "stat_intu","stat_intu_max"
-  ], locked);
+      const cardsToDim = [
+        $("pjHp")?.closest(".card.sub"),
+        $("pjSan")?.closest(".card.sub"),
+        $("stat_for")?.closest(".card.sub"),
+        $("skillsGrid")?.closest(".card.sub")
+      ].filter(Boolean);
 
-  // Compétences (%)
-  setDisabledSelector('#skillsGrid input[data-skill]', locked);
+      cardsToDim.forEach(c => c.classList.toggle("lockedDim", locked));
+    }
+    function toggleSheetLock(){
+      const id = ensureActiveProfile();
+      if (!id) return;
+      const data = getProfileData(id);
 
-  // (Optionnel) Combat aussi ? -> si tu veux, dis-moi, je l’ajoute.
-  // setDisabled(["combat_ranged","combat_melee","combat_prot","w1_name","w1_dmg","w2_name","w2_dmg"], locked);
+      data.sheet = data.sheet || defaultProfileData().sheet;
+      data.sheet.locked = !data.sheet.locked;
 
-  // Griser les blocs sensibles
-  const cardsToDim = [
-    $("pjHp")?.closest(".card.sub"),
-    $("pjSan")?.closest(".card.sub"),
-    $("stat_for")?.closest(".card.sub"),
-    $("skillsGrid")?.closest(".card.sub")
-  ].filter(Boolean);
-
-  cardsToDim.forEach(c => c.classList.toggle("lockedDim", locked));
-}
-
-function toggleSheetLock(){
-  const id = ensureActiveProfile();
-  if (!id) return;
-  const data = getProfileData(id);
-
-  data.sheet = data.sheet || defaultProfileData().sheet;
-  data.sheet.locked = !data.sheet.locked;
-
-  setProfileData(id, data);
-  applySheetLockUI(data.sheet.locked);
-}
+      setProfileData(id, data);
+      applySheetLockUI(data.sheet.locked);
+    }
+    // ✅ Listener bouton lock
+    const lockBtn = $("toggleSheetLock");
+    if (lockBtn) lockBtn.addEventListener("click", toggleSheetLock);
 
     // ===== FICHE PJ =====
     const SKILLS = [
@@ -874,19 +864,16 @@ function toggleSheetLock(){
     function loadSheetToUI(data){
       const sh = data.sheet || defaultProfileData().sheet;
 
-      // PV
       if ($("pjHpMax")) $("pjHpMax").value = sh.hpMax ?? 20;
       if ($("pjHp")) { $("pjHp").max = String(sh.hpMax ?? 20); $("pjHp").value = sh.hp ?? 0; }
       syncGauge($("pjHp"), $("pjHpFill"), $("pjHpLabel"), sh.hpMax);
       if ($("pjWounds")) $("pjWounds").value = sh.wounds ?? "";
 
-      // SAN
       if ($("pjSanMax")) $("pjSanMax").value = sh.sanMax ?? 20;
       if ($("pjSan")) { $("pjSan").max = String(sh.sanMax ?? 20); $("pjSan").value = sh.san ?? 0; }
       syncGauge($("pjSan"), $("pjSanFill"), $("pjSanLabel"), sh.sanMax);
       if ($("pjTroubles")) $("pjTroubles").value = sh.troubles ?? "";
 
-      // Stats
       const setStat = (key) => {
         const r = $(`stat_${key}`);
         const v = $(`stat_${key}_val`);
@@ -899,14 +886,12 @@ function toggleSheetLock(){
       };
       ["for","dex","end","int","intu"].forEach(setStat);
 
-      // Skills
       const skills = sh.skills || {};
       document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
         const k = inp.getAttribute("data-skill");
         inp.value = Number(skills[k] ?? 0);
       });
 
-      // Combat
       if ($("combat_ranged")) $("combat_ranged").value = Number(sh.combat?.ranged ?? 0);
       if ($("combat_melee")) $("combat_melee").value = Number(sh.combat?.melee ?? 0);
       if ($("combat_prot")) $("combat_prot").value = Number(sh.combat?.prot ?? 0);
@@ -962,10 +947,11 @@ function toggleSheetLock(){
         w2: { name: $("w2_name")?.value || "", dmg: $("w2_dmg")?.value || "" }
       };
 
-      // specials: on garde la liste stockée
       const id = ensureActiveProfile();
       const data = id ? getProfileData(id) : defaultProfileData();
       sh.specials = Array.isArray(data.sheet?.specials) ? data.sheet.specials : [];
+
+      sh.locked = !!(data.sheet && data.sheet.locked);
 
       return sh;
     }
@@ -973,20 +959,18 @@ function toggleSheetLock(){
     function saveSheet(){
       const id = ensureActiveProfile();
       if (!id) return;
-    
+
       const current = getProfileData(id);
       if (current.sheet && current.sheet.locked){
-        // verrouillé: on ignore les changements (sécurité)
         applySheetLockUI(true);
         return;
       }
-    
+
       const data = current;
       data.sheet = readSheetFromUI();
       setProfileData(id, data);
     }
 
-    // ===== LOG / INV / QUÊTES =====
     function loadActiveProfileToUI(){
       const id = ensureActiveProfile();
       if (!id) return;
@@ -1455,7 +1439,6 @@ function toggleSheetLock(){
 
       if (!obj || typeof obj !== "object") { alert("JSON invalide"); return; }
 
-      // CAS 1 : Full backup
       if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object") {
         const incomingProfiles = obj.profiles
           .filter(p => p && typeof p === "object" && typeof p.id === "string" && p.id.trim().length > 0)
@@ -1487,7 +1470,6 @@ function toggleSheetLock(){
         return;
       }
 
-      // CAS 2 : Import “profil-like” vers profil actif
       if (obj.sheet || obj.log || obj.inv || obj.quests) {
         const id = ensureActiveProfile();
         const data = getProfileData(id);
@@ -1591,7 +1573,6 @@ function toggleSheetLock(){
 
       setProfileData(id, data);
 
-      // applique aussi le nom / campagne si présent
       if (meta && (meta.name || meta.campaign)) {
         const profiles = getProfiles();
         const p = profiles.find(x => x.id === id);
