@@ -493,3 +493,19 @@ textarea#backupProfileBox{
   padding:10px 8px;
   border-radius:12px;
 }
+.sheetHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.lockedDim{
+  opacity:.55;
+  filter:saturate(.85);
+}
+
+input[disabled], select[disabled], textarea[disabled]{
+  opacity:.55;
+  cursor:not-allowed;
+}
