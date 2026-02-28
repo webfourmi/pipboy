@@ -1729,7 +1729,12 @@
     loadActiveProfileToUI();
 
     // NOTE: service worker volontairement désactivé ici (trop de cache qui casse)
-    // if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js", { scope: "./" });
+    if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js?v=29", { scope: "./" })
+        .catch(console.log);
+    });
+  }
   </script>
 </body>
 </html>
