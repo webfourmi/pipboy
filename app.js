@@ -1,4 +1,25 @@
+import { initBootOncePerSession, initClock, initTabs } from "./ui.js";
+import { initProfiles, loadActiveProfileToUI } from "./profiles.js";
+import { initSheet } from "./sheet.js";
+import { initJournal } from "./journal.js";
+import { initInv } from "./inv.js";
+import { initQuests } from "./quests.js";
+import { registerSW } from "./pwa.js";
 
+initBootOncePerSession();
+initClock();
+initTabs();
+
+initProfiles();
+initSheet();
+initJournal();
+initInv();
+initQuests();
+
+loadActiveProfileToUI();
+registerSW();
+
+////////////////////////////////////////
     const APP_VERSION = "v27";
 
     // BOOT SCREEN (1 fois par session)
