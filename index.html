@@ -1415,31 +1415,81 @@
       downloadTextFile(`pipboy-${safeName || "profil"}-${isoDay()}.json`, json);
           }
 
+        // ===== EXPORT / IMPORT : PROFIL ACTIF =====
+    const backupProfileBox = $("backupProfileBox");
+    
+    function normalizeImportedProfileData(raw){
+      if (!raw || typeof raw !== "object") return null;
+    
+      // Si on te colle directement un export "data"
+      let d = raw.data && typeof raw.data === "object" ? raw.data : raw;
+    
+      // Compat anciennes versions
+      if (typeof d.log === "string" && typeof d.logDraft !== "string") d.logDraft = d.log;
+      if (!Array.isArray(d.logEntries)) d.logEntries = [];
+      if (!Array.isArray(d.inv)) d.inv = [];
+      if (!Array.isArray(d.quests)) d.quests = [];
+    
+      if (!d.sheet || typeof d.sheet !== "object") d.sheet = {};
+      if (typeof d.sheet.locked !== "boolean") d.sheet.locked = true;
+    
+      return d;
+    }
+    
     function applyImportActiveProfile(){
       const id = ensureActiveProfile();
       if (!id || !backupProfileBox) return;
-
+    
       let obj;
       try { obj = JSON.parse(backupProfileBox.value); }
-      catch { alert("JSON invalide 😵‍💫"); return; }
-
-      if (obj && obj.data && typeof obj.data === "object"){
-        setProfileData(id, obj.data);
-        if (obj.profile){
-          const profiles = getProfiles();
-          const p = profiles.find(x => x.id === id);
-          if (p){
-            if (obj.profile.name) p.name = String(obj.profile.name).trim();
-            if (obj.profile.campaign !== undefined) p.campaign = String(obj.profile.campaign).trim();
-            setProfiles(profiles);
-          }
+      catch (e) { alert("Import profil: JSON invalide 😵‍💫"); return; }
+    
+      const data = normalizeImportedProfileData(obj);
+      if (!data) { alert("Import profil: format non reconnu 😵‍💫"); return; }
+    
+      // Applique les données au PROFIL ACTIF
+      setProfileData(id, data);
+    
+      // Si le fichier contient aussi profile.name / profile.campaign, on les applique
+      if (obj && obj.profile && typeof obj.profile === "object") {
+        const profiles = getProfiles();
+        const p = profiles.find(x => x.id === id);
+        if (p){
+          if (typeof obj.profile.name === "string" && obj.profile.name.trim()) p.name = obj.profile.name.trim();
+          if (typeof obj.profile.campaign === "string") p.campaign = obj.profile.campaign.trim();
+          setProfiles(profiles);
         }
-        loadActiveProfileToUI();
-        alert("Profil actif mis à jour ✅");
-        return;
       }
-
-      alert("Format non reconnu 😵‍💫");
+    
+      // IMPORTANT: refresh UI
+      refreshProfilesUI();
+      loadActiveProfileToUI();
+    
+      alert("✅ Profil importé dans le profil actif");
+    }
+    
+    // Importer un FICHIER dans le profil actif
+    const fileImportActive = $("fileImportActive");
+    if (fileImportActive){
+      fileImportActive.addEventListener("change", async () => {
+        const file = fileImportActive.files && fileImportActive.files[0];
+        if (!file) return;
+    
+        try {
+          const text = await file.text();
+          if (backupProfileBox) backupProfileBox.value = text;
+    
+          // Debug visuel: si ça arrive ici, le listener marche
+          // alert("Fichier lu ✅");
+    
+          applyImportActiveProfile();
+        } catch (e) {
+          console.error(e);
+          alert("Import profil: impossible de lire le fichier 😵‍💫");
+        } finally {
+          fileImportActive.value = "";
+        }
+      });
     }
 
     function downloadTextFile(filename, text, mime = "application/json") {
