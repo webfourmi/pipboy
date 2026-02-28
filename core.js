@@ -27,12 +27,6 @@ export function escapeHtml(s){
 
 export function pad2(n){ return String(n).padStart(2,"0"); }
 
-export function formatTs(ts){
-  const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return String(ts);
-  return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-}
-
 export function toDateTimeLocal(ts){
   const d = new Date(ts);
   return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
@@ -41,4 +35,10 @@ export function toDateTimeLocal(ts){
 export function fromDateTimeLocal(str){
   const d = new Date(str);
   return Number.isNaN(d.getTime()) ? Date.now() : d.getTime();
+}
+
+export function formatTs(ts){
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return String(ts);
+  return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
