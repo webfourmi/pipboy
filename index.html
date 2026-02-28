@@ -1921,6 +1921,7 @@
     }
 
     const btnApplyPackAllProfiles = $("applyPackAllProfiles");
+    
     function applyPackAllProfiles(){
       const profiles = getProfiles();
       if (!profiles || profiles.length === 0) return;
@@ -1946,7 +1947,7 @@
           const stamp = new Date().toISOString().slice(0,10);
           const header = `[PACK MJ ${obj.campaignId || ""} ${stamp}]`.trim();
           const block = `${header}\n${obj.briefing}\n\n`;
-          data.log = block + (data.log || "");
+          data.logDraft = block + (data.logDraft || "");
         }
 
         setProfileData(p.id, data);
@@ -1957,6 +1958,7 @@
     }
 
     const btnApplyPackCampaign = $("applyPackCampaign");
+    
     function applyPackCampaign(){
       const profiles = getProfiles();
       if (!profiles || profiles.length === 0) return;
@@ -1994,7 +1996,7 @@
           const stamp = new Date().toISOString().slice(0,10);
           const header = `[PACK MJ ${campaignId} ${stamp}]`;
           const block = `${header}\n${obj.briefing}\n\n`;
-          data.log = block + (data.log || "");
+          data.logDraft = block + (data.logDraft || "");
         }
 
         setProfileData(p.id, data);
