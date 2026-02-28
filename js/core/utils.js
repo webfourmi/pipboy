@@ -20,5 +20,5 @@ export function fromDateTimeLocal(str){
 }
 
 export function clamp(n, min, max){
-  return Math.max(min, Math.min(max, n));
+  return Math.max(min, Math.min(max, Number.isFinite(x) ? x : min));
 }
