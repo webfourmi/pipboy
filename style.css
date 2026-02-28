@@ -539,3 +539,7 @@ input[disabled], select[disabled], textarea[disabled]{
   line-height: 1.35;
   opacity:.95;
 }
+.lockedDim{
+  opacity: .65;
+  filter: saturate(.7);
+}
