@@ -3,17 +3,46 @@ import { $ } from "../js/core/dom.js";
 import { clamp } from "../js/core/utils.js";
 import { ensureActiveProfile, getProfileData, setProfileData } from "./profiles.js";
 
-// --- helpers UI ---
-function syncGauge(rangeEl, fillEl, labelEl, maxVal) {
-  if (!rangeEl || !fillEl || !labelEl) return;
-  const v = Number(rangeEl.value || 0);
-  const m = Math.max(1, Number(maxVal || rangeEl.max || 20));
-  const pct = Math.round((v / m) * 100);
-  fillEl.style.width = `${pct}%`;
-  labelEl.textContent = `${v}/${m}`;
-}
+// Liste des compétences (identiques à ton app avant migration)
+const SKILLS = [
+  "adaptation",
+  "astrophysique_mathematiques",
+  "biologie_geologie",
+  "bricoler_bidouiller",
+  "comprendre_etrange",
+  "convaincre",
+  "courir_sauter_nager",
+  "deplacement_zero_g",
+  "discretion",
+  "garder_son_calme",
+  "observer",
+  "pilotage",
+  "programmation",
+  "reflexes",
+  "soigner",
+  "survie",
+];
 
-function getSheetDefaults() {
+const SKILLS_LABEL = {
+  adaptation: "Adaptation",
+  astrophysique_mathematiques: "Astrophysique / Mathématiques",
+  biologie_geologie: "Biologie / Géologie",
+  bricoler_bidouiller: "Bricoler / Bidouiller",
+  comprendre_etrange: "Comprendre l’étrange",
+  convaincre: "Convaincre",
+  courir_sauter_nager: "Courir / Sauter / Nager",
+  deplacement_zero_g: "Déplacement en zéro G",
+  discretion: "Discrétion",
+  garder_son_calme: "Garder son calme",
+  observer: "Observer",
+  pilotage: "Pilotage",
+  programmation: "Programmation",
+  reflexes: "Réflexes",
+  soigner: "Soigner",
+  survie: "Survie",
+};
+
+function sheetDefaults() {
   return {
     locked: true,
     hp: 10,
@@ -36,7 +65,7 @@ function getSheetDefaults() {
 }
 
 function normalizeSheet(sheet) {
-  const base = getSheetDefaults();
+  const base = sheetDefaults();
   const sh = Object.assign({}, base, sheet || {});
   sh.locked = !!sh.locked;
 
@@ -53,9 +82,8 @@ function normalizeSheet(sheet) {
   sh.wounds = typeof sh.wounds === "string" ? sh.wounds : "";
   sh.troubles = typeof sh.troubles === "string" ? sh.troubles : "";
 
-  // stats
   sh.stats = (sh.stats && typeof sh.stats === "object") ? sh.stats : {};
-  ["for","dex","end","int","intu"].forEach(k => {
+  ["for", "dex", "end", "int", "intu"].forEach((k) => {
     const cur = sh.stats[k] && typeof sh.stats[k] === "object" ? sh.stats[k] : base.stats[k];
     const max = Math.max(1, Number.isFinite(+cur.max) ? +cur.max : base.stats[k].max);
     const v = clamp(Number.isFinite(+cur.v) ? +cur.v : base.stats[k].v, 0, max);
@@ -66,21 +94,44 @@ function normalizeSheet(sheet) {
   sh.specials = Array.isArray(sh.specials) ? sh.specials : [];
 
   sh.combat = Object.assign({}, base.combat, sh.combat || {});
-  sh.combat.w1 = Object.assign({}, base.combat.w1, (sh.combat.w1 || {}));
-  sh.combat.w2 = Object.assign({}, base.combat.w2, (sh.combat.w2 || {}));
+  sh.combat.w1 = Object.assign({}, base.combat.w1, sh.combat.w1 || {});
+  sh.combat.w2 = Object.assign({}, base.combat.w2, sh.combat.w2 || {});
 
   return sh;
 }
 
-// --- lock UI (tu as déjà modals.js / css lockedDim etc) ---
+function buildSkillsUI() {
+  const box = $("skillsGrid");
+  if (!box) return;
+  box.innerHTML = "";
+  SKILLS.forEach((k) => {
+    const wrap = document.createElement("label");
+    wrap.className = "field";
+    wrap.innerHTML = `
+      <span>${SKILLS_LABEL[k] || k}</span>
+      <input data-skill="${k}" type="number" min="0" max="100" step="1" value="0">
+    `;
+    box.appendChild(wrap);
+  });
+}
+
+function syncGauge(rangeEl, fillEl, labelEl, maxVal) {
+  if (!rangeEl || !fillEl || !labelEl) return;
+  const v = Number(rangeEl.value || 0);
+  const m = Math.max(1, Number(maxVal || rangeEl.max || 20));
+  const pct = Math.round((v / m) * 100);
+  fillEl.style.width = `${pct}%`;
+  labelEl.textContent = `${v}/${m}`;
+}
+
 function setDisabled(ids, disabled) {
-  ids.forEach(id => {
+  ids.forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.disabled = !!disabled;
   });
 }
 function setDisabledSelector(selector, disabled) {
-  document.querySelectorAll(selector).forEach(el => { el.disabled = !!disabled; });
+  document.querySelectorAll(selector).forEach((el) => (el.disabled = !!disabled));
 }
 
 function applySheetLockUI(locked) {
@@ -94,35 +145,27 @@ function applySheetLockUI(locked) {
   }
   if (hint) hint.style.display = locked ? "block" : "none";
 
-  setDisabled(["pjHp","pjHpMax","pjSan","pjSanMax","pjWounds","pjTroubles"], locked);
+  setDisabled(["pjHp", "pjHpMax", "pjSan", "pjSanMax", "pjWounds", "pjTroubles"], locked);
 
-  setDisabled([
-    "stat_for","stat_for_max",
-    "stat_dex","stat_dex_max",
-    "stat_end","stat_end_max",
-    "stat_int","stat_int_max",
-    "stat_intu","stat_intu_max",
-  ], locked);
+  setDisabled(
+    [
+      "stat_for", "stat_for_max",
+      "stat_dex", "stat_dex_max",
+      "stat_end", "stat_end_max",
+      "stat_int", "stat_int_max",
+      "stat_intu", "stat_intu_max",
+    ],
+    locked
+  );
 
   setDisabledSelector("#skillsGrid input[data-skill]", locked);
 
-  setDisabled([
-    "combat_ranged","combat_melee","combat_prot",
-    "w1_name","w1_dmg","w2_name","w2_dmg"
-  ], locked);
-
-  const cardsToDim = [
-    $("pjHp")?.closest(".card.sub"),
-    $("pjSan")?.closest(".card.sub"),
-    $("stat_for")?.closest(".card.sub"),
-    $("skillsGrid")?.closest(".card.sub"),
-    $("combat_ranged")?.closest(".card.sub"),
-  ].filter(Boolean);
-
-  cardsToDim.forEach(c => c.classList.toggle("lockedDim", locked));
+  setDisabled(
+    ["combat_ranged", "combat_melee", "combat_prot", "w1_name", "w1_dmg", "w2_name", "w2_dmg"],
+    locked
+  );
 }
 
-// --- load/save ---
 function loadSheetToUI(profileData) {
   const sh = normalizeSheet(profileData.sheet);
 
@@ -139,20 +182,18 @@ function loadSheetToUI(profileData) {
   if ($("pjTroubles")) $("pjTroubles").value = sh.troubles;
 
   // Stats
-  const setStat = (key) => {
-    const r = $(`stat_${key}`);
-    const v = $(`stat_${key}_val`);
-    const m = $(`stat_${key}_max`);
-    const st = sh.stats[key];
-
+  ["for", "dex", "end", "int", "intu"].forEach((k) => {
+    const r = $(`stat_${k}`);
+    const v = $(`stat_${k}_val`);
+    const m = $(`stat_${k}_max`);
+    const st = sh.stats[k];
     if (m) m.value = st.max;
     if (r) { r.max = String(st.max); r.value = String(st.v); }
     if (v) v.textContent = String(st.v);
-  };
-  ["for","dex","end","int","intu"].forEach(setStat);
+  });
 
   // Skills
-  document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
+  document.querySelectorAll("#skillsGrid input[data-skill]").forEach((inp) => {
     const k = inp.getAttribute("data-skill");
     inp.value = String(Number(sh.skills[k] ?? 0));
   });
@@ -169,10 +210,20 @@ function loadSheetToUI(profileData) {
   applySheetLockUI(!!sh.locked);
 }
 
-function readSheetFromUI(currentProfileData) {
-  const sh = normalizeSheet(currentProfileData.sheet);
+function saveSheetFromUI() {
+  const id = ensureActiveProfile();
+  if (!id) return;
 
-  // PV/SAN + max
+  const data = getProfileData(id);
+  const sh = normalizeSheet(data.sheet);
+
+  // verrouillé => on ne change rien
+  if (sh.locked) {
+    applySheetLockUI(true);
+    return;
+  }
+
+  // Lire UI -> data.sheet
   sh.hpMax = Math.max(1, Number($("pjHpMax")?.value || sh.hpMax));
   sh.hp = clamp(Number($("pjHp")?.value || sh.hp), 0, sh.hpMax);
   sh.wounds = $("pjWounds")?.value || "";
@@ -181,22 +232,19 @@ function readSheetFromUI(currentProfileData) {
   sh.san = clamp(Number($("pjSan")?.value || sh.san), 0, sh.sanMax);
   sh.troubles = $("pjTroubles")?.value || "";
 
-  // Stats
-  ["for","dex","end","int","intu"].forEach(k => {
+  ["for", "dex", "end", "int", "intu"].forEach((k) => {
     const max = Math.max(1, Number($(`stat_${k}_max`)?.value || sh.stats[k].max));
     const v = clamp(Number($(`stat_${k}`)?.value || sh.stats[k].v), 0, max);
     sh.stats[k] = { v, max };
   });
 
-  // Skills
   const skills = {};
-  document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
+  document.querySelectorAll("#skillsGrid input[data-skill]").forEach((inp) => {
     const k = inp.getAttribute("data-skill");
     skills[k] = Number(inp.value || 0);
   });
   sh.skills = skills;
 
-  // Combat
   sh.combat = {
     ranged: Number($("combat_ranged")?.value || 0),
     melee: Number($("combat_melee")?.value || 0),
@@ -205,44 +253,28 @@ function readSheetFromUI(currentProfileData) {
     w2: { name: $("w2_name")?.value || "", dmg: $("w2_dmg")?.value || "" },
   };
 
-  // specials: on garde ce qui est déjà stocké
-  sh.specials = Array.isArray(currentProfileData.sheet?.specials) ? currentProfileData.sheet.specials : [];
-
-  return sh;
-}
-
-function saveSheetFromUI() {
-  const id = ensureActiveProfile();
-  if (!id) return;
-
-  const data = getProfileData(id);
-  const sh = normalizeSheet(data.sheet);
-
-  if (sh.locked) {
-    applySheetLockUI(true);
-    return;
-  }
-
-  data.sheet = readSheetFromUI(data);
+  data.sheet = sh;
   setProfileData(id, data);
 
-  // re-render (important pour jauges/max)
+  // IMPORTANT: re-render pour recalculer jauges/max/labels
   loadSheetToUI(data);
 }
 
-// --- public init ---
 export function initSheet() {
-  // 1) load initial
+  // 1) construire les compétences (sinon elles n’existent pas)
+  buildSkillsUI();
+
+  // 2) charger la fiche au démarrage
   const id = ensureActiveProfile();
   if (id) loadSheetToUI(getProfileData(id));
 
-  // 2) reload on profile switch
+  // 3) recharger au changement de profil
   document.addEventListener("pipboy:profile-changed", () => {
     const id2 = ensureActiveProfile();
     if (id2) loadSheetToUI(getProfileData(id2));
   });
 
-  // 3) lock toggle
+  // 4) bouton lock
   const lockBtn = $("toggleSheetLock");
   if (lockBtn) {
     lockBtn.addEventListener("click", () => {
@@ -257,29 +289,25 @@ export function initSheet() {
     });
   }
 
-  // 4) listeners PV/SAN + max
+  // 5) listeners PV/SAN/MAX etc
   const hook = (id, evt = "input") => {
     const el = $(id);
     if (!el) return;
     el.addEventListener(evt, () => saveSheetFromUI());
   };
 
-  // PV/SAN + max + textes
-  ["pjHp","pjHpMax","pjSan","pjSanMax","pjWounds","pjTroubles"].forEach(id => hook(id, "input"));
-  ["pjHpMax","pjSanMax"].forEach(id => hook(id, "change"));
+  ["pjHp", "pjHpMax", "pjSan", "pjSanMax", "pjWounds", "pjTroubles"].forEach((id) => hook(id, "input"));
+  ["pjHpMax", "pjSanMax"].forEach((id) => hook(id, "change"));
 
-  // Stats value + max
-  ["for","dex","end","int","intu"].forEach(k => {
+  ["for", "dex", "end", "int", "intu"].forEach((k) => {
     hook(`stat_${k}`, "input");
     hook(`stat_${k}_max`, "input");
     hook(`stat_${k}_max`, "change");
   });
 
-  // Skills
-  document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
+  document.querySelectorAll("#skillsGrid input[data-skill]").forEach((inp) => {
     inp.addEventListener("input", () => saveSheetFromUI());
   });
 
-  // Combat
-  ["combat_ranged","combat_melee","combat_prot","w1_name","w1_dmg","w2_name","w2_dmg"].forEach(id => hook(id, "input"));
+  ["combat_ranged", "combat_melee", "combat_prot", "w1_name", "w1_dmg", "w2_name", "w2_dmg"].forEach((id) => hook(id, "input"));
 }
