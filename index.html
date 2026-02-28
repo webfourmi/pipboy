@@ -16,7 +16,7 @@
   <!-- BOOT OVERLAY -->
   <div id="boot" class="boot show" aria-hidden="false">
     <div class="bootInner">
-      <div class="bootBrand">PIP-BOY // ORION</div>
+      <div class="bootBrand">PIP-BOY // STARS</div>
       <div class="bootLines">
         <div class="bootLine">INITIALISATION…</div>
         <div class="bootLine">CHARGEMENT MODULES: STATUS / DATA / INV</div>
@@ -65,7 +65,7 @@
           <h2 style="margin:0;">Fiche PJ</h2>
           <button id="toggleSheetLock" class="miniBtn" type="button" aria-pressed="false">🔓 ÉDITION</button>
         </div>
-        <p class="tiny" id="sheetLockHint" style="margin:8px 0 0; display:none;">Édition verrouillée: PV/SAN, caracs, compétences.</p>
+        <p class="tiny" id="sheetLockHint" style="margin:8px 0 0; display:none;">Édition verrouillée: PV/SAN, caracs, compétences,combat.</p>
 
         <div class="gridSheet">
 
@@ -746,13 +746,19 @@
         "stat_intu","stat_intu_max"
       ], locked);
 
+      setDisabled([
+        "combat_ranged","combat_melee","combat_prot",
+        "w1_name","w1_dmg","w2_name","w2_dmg"
+      ], locked);
+
       setDisabledSelector('#skillsGrid input[data-skill]', locked);
 
       const cardsToDim = [
         $("pjHp")?.closest(".card.sub"),
         $("pjSan")?.closest(".card.sub"),
         $("stat_for")?.closest(".card.sub"),
-        $("skillsGrid")?.closest(".card.sub")
+        $("skillsGrid")?.closest(".card.sub"),
+        $("combat_ranged")?.closest(".card.sub")
       ].filter(Boolean);
 
       cardsToDim.forEach(c => c.classList.toggle("lockedDim", locked));
