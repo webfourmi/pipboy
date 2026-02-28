@@ -26,7 +26,7 @@ function init() {
   initJournal();
   initInventory();
   initQuests();
-  initIO();
+  initIO({ APP_VERSION });
 
   // SW (si tu veux le garder ici)
   if ("serviceWorker" in navigator) {
