@@ -8,7 +8,6 @@
 }
 
 *{ box-sizing:border-box; }
-
 html, body { height: 100%; }
 
 body{
@@ -90,14 +89,14 @@ body{
 
 h1{ font-size:18px; margin:10px 2px; color:var(--muted); }
 h2{ font-size:14px; margin:0 0 10px; color:var(--text); }
+h3{ font-size:13px; margin:0 0 10px; color:var(--text); }
 
-/* GRILLE */
+/* GRILLE (legacy) */
 .grid{
   display:grid;
   grid-template-columns: 1fr;
   gap:12px;
 }
-
 @media (min-width: 760px){
   .grid{ grid-template-columns: 1fr 1fr 1fr; }
 }
@@ -132,9 +131,7 @@ h2{ font-size:14px; margin:0 0 10px; color:var(--text); }
   gap:10px;
   margin-top:10px;
 }
-
 .row.right{ justify-content:flex-end; }
-
 input[type="range"]{ width:100%; }
 
 /* INPUTS */
@@ -156,12 +153,10 @@ button{
   color:var(--text);
   padding:10px 12px;
 }
-
 button.danger{
   border-color: rgba(255,92,122,.45);
   background: rgba(255,92,122,.12);
 }
-
 button.mini{
   padding:6px 10px;
   border-radius:10px;
@@ -173,7 +168,6 @@ button.mini{
   padding:0;
   margin:10px 0 0;
 }
-
 .list li{
   display:flex;
   justify-content:space-between;
@@ -190,7 +184,7 @@ button.mini{
 .hint{ color: var(--muted); margin:10px 0 0; font-size:12px; }
 .tiny{ color: var(--muted); font-size:12px; letter-spacing:.5px; }
 
-/* FOOTER NORMAL (PAS FIXE) */
+/* FOOTER */
 .footnote{
   margin-top: 12px;
   padding: 12px 14px;
@@ -263,9 +257,8 @@ textarea#backupProfileBox{
   position: fixed;
   inset: 0;
   display: none;
-  z-index: 9999; /* en dessous du BOOT */
+  z-index: 9999; /* sous le boot */
 }
-
 .modal.show{ display: block; }
 
 .modalBackdrop{
@@ -307,13 +300,12 @@ textarea#backupProfileBox{
 
 .modalBody{ padding: 12px; }
 
-/* Fiche PJ layout */
+/* ===== Fiche PJ layout ===== */
 .gridSheet{
   display:grid;
   grid-template-columns: 1fr;
   gap:12px;
 }
-
 @media (min-width: 860px){
   .gridSheet{ grid-template-columns: 1fr 1fr; }
 }
@@ -385,10 +377,46 @@ textarea#backupProfileBox{
   background: rgba(0,0,0,.15);
 }
 
-/* =========================================
-   BOOT OVERLAY (FIX)
-   Utilise #boot pour éviter toute collision
-   ========================================= */
+/* Patch: titre fiche + lock */
+.sheetHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+/* Patch: MAX au-dessus du champ */
+.maxBox{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  width:90px;
+  min-width:90px;
+}
+.maxLabel{
+  font-size:11px;
+  letter-spacing:.12em;
+  color: var(--muted);
+  opacity:.95;
+}
+.maxBox input{
+  width:100%;
+  text-align:center;
+  padding:10px 8px;
+  border-radius:12px;
+}
+
+/* Patch: verrouillage visuel */
+.lockedDim{
+  opacity:.55;
+  filter:saturate(.85);
+}
+input[disabled], select[disabled], textarea[disabled]{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+/* ===== BOOT OVERLAY (force plein écran) ===== */
 #boot{
   position: fixed !important;
   inset: 0 !important;
@@ -400,9 +428,7 @@ textarea#backupProfileBox{
   color: #b7ffd9;
 }
 
-#boot.show{
-  display: flex !important;
-}
+#boot.show{ display:flex !important; }
 
 #boot .bootInner{
   width: min(720px, calc(100vw - 28px));
@@ -415,6 +441,7 @@ textarea#backupProfileBox{
   overflow: hidden;
 }
 
+/* scanlines */
 #boot .bootInner::before{
   content:"";
   position:absolute; inset:-40px 0;
@@ -468,44 +495,6 @@ textarea#backupProfileBox{
   opacity:.7;
 }
 
-/* Accessibilité: si l'utilisateur réduit les animations */
 @media (prefers-reduced-motion: reduce){
-  #boot .bootInner::before{ animation: none; }
-}
-.maxBox{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  width: 90px;
-  min-width: 90px;
-}
-
-.maxLabel{
-  font-size:11px;
-  letter-spacing:.12em;
-  color: var(--muted);
-  opacity:.95;
-}
-
-.maxBox input{
-  width:100%;
-  text-align:center;
-  padding:10px 8px;
-  border-radius:12px;
-}
-.sheetHead{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-}
-
-.lockedDim{
-  opacity:.55;
-  filter:saturate(.85);
-}
-
-input[disabled], select[disabled], textarea[disabled]{
-  opacity:.55;
-  cursor:not-allowed;
+  #boot .bootInner::before{ animation:none; }
 }
