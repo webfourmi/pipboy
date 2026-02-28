@@ -1,6 +1,6 @@
 // features/profiles.js
 import { store } from "../js/core/store.js";
-import { $ } from "../js/core/dom.js";
+import { $, } from "../js/core/dom.js";
 
 const PROFILES_KEY = "pipboy_profiles";
 const ACTIVE_KEY = "pipboy_active_profile";
@@ -28,11 +28,9 @@ export function profileKey(id){ return `pipboy_profile_${id}`; }
 export function getProfileData(id){
   return store.get(profileKey(id), defaultProfileData());
 }
-
 export function setProfileData(id, data){
   store.set(profileKey(id), data);
 }
-
 export function deleteProfileData(id){
   store.del(profileKey(id));
 }
@@ -41,6 +39,7 @@ export function ensureActiveProfile(){
   const profiles = getProfiles();
   let activeId = getActiveId();
 
+  // premier lancement
   if (!profiles.length) {
     const id = uid();
     setProfiles([{ id, name: "P1", campaign: "ORION", createdAt: new Date().toISOString() }]);
@@ -49,6 +48,7 @@ export function ensureActiveProfile(){
     return id;
   }
 
+  // id actif invalide
   if (!activeId || !profiles.find(p => p.id === activeId)) {
     activeId = profiles[0].id;
     setActiveId(activeId);
@@ -56,16 +56,12 @@ export function ensureActiveProfile(){
   return activeId;
 }
 
-function emitProfileChanged(){
-  document.dispatchEvent(new CustomEvent("pipboy:profile-changed"));
-}
-
 export function refreshProfilesUI(APP_VERSION){
   const profiles = getProfiles();
   const id = ensureActiveProfile();
   const meta = profiles.find(p => p.id === id) || profiles[0];
 
-  // Select
+  // select
   const sel = $("profileSelect");
   if (sel){
     sel.innerHTML = "";
@@ -78,11 +74,11 @@ export function refreshProfilesUI(APP_VERSION){
     });
   }
 
-  // Champs modal
+  // inputs modale
   if ($("profileName")) $("profileName").value = meta?.name ?? "";
   if ($("profileCampaign")) $("profileCampaign").value = meta?.campaign ?? "";
 
-  // UI “status”
+  // hint footer + mini line + svg
   if ($("activeProfileHint")) {
     $("activeProfileHint").textContent =
       `PROFIL: ${meta?.name ?? "?"} • ${meta?.campaign ?? "—"} • LOCAL SAVE • ${APP_VERSION}`;
@@ -95,13 +91,13 @@ export function initProfiles({ APP_VERSION }){
   ensureActiveProfile();
   refreshProfilesUI(APP_VERSION);
 
-  // change profil (select)
+  // changement via select
   const sel = $("profileSelect");
   if (sel) {
     sel.addEventListener("change", () => {
       setActiveId(sel.value);
       refreshProfilesUI(APP_VERSION);
-      emitProfileChanged();
+      document.dispatchEvent(new CustomEvent("pipboy:profile-changed"));
     });
   }
 
@@ -118,7 +114,7 @@ export function initProfiles({ APP_VERSION }){
       setActiveId(id);
 
       refreshProfilesUI(APP_VERSION);
-      emitProfileChanged();
+      document.dispatchEvent(new CustomEvent("pipboy:profile-changed"));
     });
   }
 
@@ -132,14 +128,14 @@ export function initProfiles({ APP_VERSION }){
       if (!p) return;
 
       const newName = ($("profileName")?.value || "").trim();
-      const newCamp = ($("profileCampaign")?.value || "").trim();
+      const newCampaign = ($("profileCampaign")?.value || "").trim();
 
       if (newName) p.name = newName;
-      p.campaign = newCamp;
+      p.campaign = newCampaign;
 
       setProfiles(profiles);
       refreshProfilesUI(APP_VERSION);
-      emitProfileChanged();
+      document.dispatchEvent(new CustomEvent("pipboy:profile-changed"));
     });
   }
 
@@ -152,18 +148,19 @@ export function initProfiles({ APP_VERSION }){
         alert("Impossible: il faut garder au moins 1 profil.");
         return;
       }
+
       const id = ensureActiveProfile();
-      const p = profiles.find(x => x.id === id);
-      const ok = confirm(`Supprimer le profil "${p ? p.name : id}" ?`);
+      const meta = profiles.find(p => p.id === id);
+      const ok = confirm(`Supprimer le profil "${meta?.name ?? id}" ?`);
       if (!ok) return;
 
-      const filtered = profiles.filter(x => x.id !== id);
-      setProfiles(filtered);
+      const remaining = profiles.filter(p => p.id !== id);
+      setProfiles(remaining);
       deleteProfileData(id);
 
-      setActiveId(filtered[0].id);
+      setActiveId(remaining[0].id);
       refreshProfilesUI(APP_VERSION);
-      emitProfileChanged();
+      document.dispatchEvent(new CustomEvent("pipboy:profile-changed"));
     });
   }
 }
