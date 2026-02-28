@@ -520,6 +520,73 @@
     const profileModal = $("profileModal");
     const closeProfileBtn = $("closeProfile");
     const closeProfileBackdrop = $("closeProfileBackdrop");
+    const openArchivesBtn = $("openArchives");
+    const archivesModal = $("archivesModal");
+    const closeArchivesBtn = $("closeArchives");
+    const closeArchivesBackdrop = $("closeArchivesBackdrop");
+    
+    function openArchives(){
+      if (!archivesModal) return;
+      archivesModal.classList.add("show");
+      archivesModal.setAttribute("aria-hidden","false");
+      renderArchives();
+    }
+    function closeArchives(){
+      if (!archivesModal) return;
+      archivesModal.classList.remove("show");
+      archivesModal.setAttribute("aria-hidden","true");
+    }
+    
+    if (openArchivesBtn) openArchivesBtn.addEventListener("click", openArchives);
+    if (closeArchivesBtn) closeArchivesBtn.addEventListener("click", closeArchives);
+    if (closeArchivesBackdrop) closeArchivesBackdrop.addEventListener("click", closeArchives);
+    
+    // Actions dans la liste
+    const archivesList = $("archivesList");
+    if (archivesList){
+      archivesList.addEventListener("click", async (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        const act = t.getAttribute("data-act");
+        const id = t.getAttribute("data-id");
+        if (!act || !id) return;
+    
+        const { draft, entries } = getJournalData();
+        const item = entries.find(x => x.id === id);
+        if (!item) return;
+    
+        if (act === "copy"){
+          try { await navigator.clipboard.writeText(item.text || ""); alert("Copié ✅"); }
+          catch { alert("Copie impossible"); }
+          return;
+        }
+    
+        if (act === "del"){
+          const ok = confirm("Supprimer cette archive ?");
+          if (!ok) return;
+          setJournalData(draft, entries.filter(x => x.id !== id));
+          renderArchives();
+        }
+      });
+    }
+    
+    // Copier tout / vider
+    const exportArchivesBtn = $("exportArchives");
+    if (exportArchivesBtn) exportArchivesBtn.addEventListener("click", async () => {
+      const { entries } = getJournalData();
+      const sorted = entries.slice().sort((a,b)=> (b.ts||0) - (a.ts||0));
+      const text = sorted.map(e => `[${formatTs(e.ts)}]\n${e.text}\n`).join("\n");
+      try { await navigator.clipboard.writeText(text); alert("Archives copiées ✅"); }
+      catch { alert("Copie impossible"); }
+    });
+    
+    const clearArchivesBtn = $("clearArchives");
+    if (clearArchivesBtn) clearArchivesBtn.addEventListener("click", () => {
+      const ok = confirm("Vider toutes les archives de ce profil ?");
+      if (!ok) return;
+      setJournalData(getJournalData().draft, []);
+      renderArchives();
+    });
 
     function openProfileModal(){
       if (!profileModal) return;
@@ -588,7 +655,8 @@
 
     function defaultProfileData(){
       return {
-        log: "",
+        logDraft: "",
+        logEntries: [],
         inv: [],
         quests: [],
         sheet: {
@@ -621,7 +689,8 @@
       out.inv = Array.isArray(out.inv) ? out.inv : [];
       out.quests = Array.isArray(out.quests) ? out.quests : [];
       out.log = (typeof out.log === "string") ? out.log : "";
-
+      out.logDraft = (typeof out.logDraft === "string") ? out.logDraft : (typeof out.log === "string" ? out.log : "");
+      out.logEntries = Array.isArray(out.logEntries) ? out.logEntries : [];
       out.sheet = Object.assign({}, base.sheet, (d && d.sheet) ? d.sheet : {});
       out.sheet.locked = !!out.sheet.locked;
 
@@ -1008,7 +1077,8 @@
 
       const data = getProfileData(id);
 
-      if ($("log")) $("log").value = data.log ?? "";
+      if ($("log")) $("log").value = data.logDraft ?? "";
+      renderArchives();
 
       renderInv();
       renderQuests();
@@ -1016,13 +1086,88 @@
       loadSheetToUI(data);
     }
 
-    function saveLogOnly(){
+    // ===== JOURNAL: note active + archives =====
+    function getJournalData(){
+      const id = ensureActiveProfile();
+      if (!id) return { draft:"", entries:[] };
+      const data = getProfileData(id);
+      return {
+        draft: (typeof data.logDraft === "string") ? data.logDraft : "",
+        entries: Array.isArray(data.logEntries) ? data.logEntries : []
+      };
+    }
+    
+    function setJournalData(draft, entries){
       const id = ensureActiveProfile();
       if (!id) return;
       const data = getProfileData(id);
-      data.log = $("log") ? $("log").value : (data.log || "");
+      data.logDraft = (typeof draft === "string") ? draft : "";
+      data.logEntries = Array.isArray(entries) ? entries : [];
       setProfileData(id, data);
     }
+    
+    function formatTs(ts){
+      const d = new Date(ts);
+      if (Number.isNaN(d.getTime())) return String(ts);
+      const pad = (n)=>String(n).padStart(2,"0");
+      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    
+    function renderArchives(){
+      const box = $("archivesList");
+      if (!box) return;
+    
+      const { entries } = getJournalData();
+      const sorted = entries.slice().sort((a,b)=> (b.ts||0) - (a.ts||0));
+    
+      if (sorted.length === 0){
+        box.innerHTML = `<p class="hint">Aucune archive pour ce profil.</p>`;
+        return;
+      }
+    
+      box.innerHTML = sorted.map(e => `
+        <div class="archItem" data-id="${e.id}">
+          <div class="archHead">
+            <div class="archDate">${escapeHtml(formatTs(e.ts))}</div>
+            <div class="archActions">
+              <button class="mini" type="button" data-act="copy" data-id="${e.id}">Copier</button>
+              <button class="mini danger" type="button" data-act="del" data-id="${e.id}">X</button>
+            </div>
+          </div>
+          <div class="archText">${escapeHtml(e.text || "")}</div>
+        </div>
+      `).join("");
+    }
+    
+    // Boutons journal (DATA)
+    const btnArchive = $("saveLog");
+    const btnClearDraft = $("clearLog");
+    
+    if (btnArchive) btnArchive.addEventListener("click", () => {
+      const logEl = $("log");
+      const text = (logEl ? logEl.value : "").trim();
+      if (!text) return;
+    
+      const { entries } = getJournalData();
+      entries.unshift({ id: uid(), ts: Date.now(), text });
+    
+      // on archive + on vide la note active
+      setJournalData("", entries);
+    
+      if (logEl) logEl.value = "";
+      renderArchives();
+    });
+    
+    if (btnClearDraft) btnClearDraft.addEventListener("click", () => {
+      setJournalData("", getJournalData().entries);
+      if ($("log")) $("log").value = "";
+    });
+    
+    // Charger la note active au changement de profil
+    // Dans loadActiveProfileToUI(), remplace l’ancien set du log par:
+    (function(){
+      // tu peux mettre ça directement dans loadActiveProfileToUI()
+    })();
 
     // Events Fiche PJ
     ["input","change"].forEach(evt => {
