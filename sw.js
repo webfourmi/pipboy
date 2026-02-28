@@ -1,29 +1,39 @@
-// sw.js — PipBoy PWA (v28)
+// sw.js — PipBoy PWA (v29)
 // Stratégie:
-// - HTML: network-first (pour éviter les vieilles versions qui collent)
-// - CSS/JS/images/icons: cache-first (rapide + offline)
+// - HTML: network-first (évite les vieilles versions qui collent)
+// - JS/CSS: stale-while-revalidate (rapide + se met à jour)
+// - Images/Icons: cache-first (offline-friendly)
 // - nettoyage automatique des anciens caches
 
 const CACHE_VERSION = "v29";
 const STATIC_CACHE = `pipboy-static-${CACHE_VERSION}`;
 const HTML_CACHE   = `pipboy-html-${CACHE_VERSION}`;
 
-// Liste minimaliste: on pré-cache le cœur
+// ⚠️ Mets ici TES vrais chemins (modules)
 const PRECACHE = [
   "./",
   "./index.html",
   "./style.css",
   "./manifest.json",
   "./app.js",
-    
-  "./core.js",
-  "./ui.js",
-  "./profiles.js",
-  "./sheet.js",
-  "./journal.js",
-  "./inv.js",
-  "./quests.js",
-  "./pwa.js",
+
+  // core
+  "./js/core/dom.js",
+  "./js/core/store.js",
+  "./js/core/utils.js",
+
+  // features
+  "./features/boot.js",
+  "./features/tabs.js",
+  "./features/modals.js",
+  "./features/profiles.js",
+  "./features/sheet.js",
+  "./features/journal.js",
+  "./features/inventory.js",
+  "./features/quests.js",
+  "./features/io.js",
+
+  // icons
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-maskable-192.png",
@@ -32,29 +42,36 @@ const PRECACHE = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    (async () => {
-      const cache = await caches.open(STATIC_CACHE);
-      await cache.addAll(PRECACHE);
-      // Active le nouveau SW sans attendre
-      await self.skipWaiting();
-    })()
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(STATIC_CACHE);
+
+    // ✅ Important: si UN fichier 404, addAll() plante tout.
+    // Donc on "best-effort" : on tente un par un.
+    await Promise.all(
+      PRECACHE.map(async (url) => {
+        try {
+          await cache.add(url);
+        } catch (e) {
+          // on log mais on n'empêche pas l'installation
+          console.warn("[SW] Precaching failed:", url, e);
+        }
+      })
+    );
+
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    (async () => {
-      // Supprime les anciens caches
-      const keys = await caches.keys();
-      await Promise.all(
-        keys
-          .filter((k) => k.startsWith("pipboy-") && k !== STATIC_CACHE && k !== HTML_CACHE)
-          .map((k) => caches.delete(k))
-      );
-      await self.clients.claim();
-    })()
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter((k) => k.startsWith("pipboy-") && k !== STATIC_CACHE && k !== HTML_CACHE)
+        .map((k) => caches.delete(k))
+    );
+    await self.clients.claim();
+  })());
 });
 
 // Helpers
@@ -62,26 +79,30 @@ function isHTML(req) {
   return req.mode === "navigate" || (req.headers.get("accept") || "").includes("text/html");
 }
 
-function isStaticAsset(url) {
-  // On considère comme "statique" ce qui finit par ces extensions
+function isImage(url) {
   return (
-    url.pathname.endsWith(".css") ||
-    url.pathname.endsWith(".js") ||
     url.pathname.endsWith(".png") ||
     url.pathname.endsWith(".jpg") ||
     url.pathname.endsWith(".jpeg") ||
     url.pathname.endsWith(".webp") ||
     url.pathname.endsWith(".svg") ||
-    url.pathname.endsWith(".ico") ||
+    url.pathname.endsWith(".ico")
+  );
+}
+
+function isStatic(url) {
+  return (
+    url.pathname.endsWith(".css") ||
+    url.pathname.endsWith(".js") ||
     url.pathname.endsWith(".json")
   );
 }
 
-// Network-first pour HTML (évite le problème “ça reste” après update)
-async function networkFirst(req) {
+// Network-first pour HTML
+async function networkFirstHTML(req) {
   const cache = await caches.open(HTML_CACHE);
   try {
-    const res = await fetch(req);
+    const res = await fetch(req, { cache: "no-store" });
     if (res && res.ok) cache.put(req, res.clone());
     return res;
   } catch (e) {
@@ -90,47 +111,61 @@ async function networkFirst(req) {
   }
 }
 
-// Cache-first pour assets (rapide + offline)
+// Stale-while-revalidate pour JS/CSS/JSON
+async function staleWhileRevalidate(req) {
+  const cache = await caches.open(STATIC_CACHE);
+  const cached = await cache.match(req);
+
+  const fetchPromise = fetch(req).then((res) => {
+    if (res && res.ok) cache.put(req, res.clone());
+    return res;
+  }).catch(() => null);
+
+  // on renvoie cache si dispo, sinon réseau
+  return cached || (await fetchPromise) || caches.match("./index.html");
+}
+
+// Cache-first pour images (offline)
 async function cacheFirst(req) {
-  const cached = await caches.match(req);
+  const cache = await caches.open(STATIC_CACHE);
+  const cached = await cache.match(req);
   if (cached) return cached;
 
   try {
     const res = await fetch(req);
-    if (res && res.ok) {
-      const cache = await caches.open(STATIC_CACHE);
-      cache.put(req, res.clone());
-    }
+    if (res && res.ok) cache.put(req, res.clone());
     return res;
   } catch (e) {
-    // fallback: si on demande un asset et qu’on est offline
+    // fallback minimal
     return caches.match("./");
   }
 }
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-
-  // On ne gère pas les requêtes non-GET
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
-
-  // On ne gère que le même origin (GitHub Pages)
   if (url.origin !== self.location.origin) return;
 
-  // HTML -> network first
+  // HTML
   if (isHTML(req)) {
-    event.respondWith(networkFirst(req));
+    event.respondWith(networkFirstHTML(req));
     return;
   }
 
-  // Assets -> cache first
-  if (isStaticAsset(url)) {
+  // Images
+  if (isImage(url)) {
     event.respondWith(cacheFirst(req));
     return;
   }
 
-  // Par défaut: cache-first
-  event.respondWith(cacheFirst(req));
+  // JS/CSS/JSON
+  if (isStatic(url)) {
+    event.respondWith(staleWhileRevalidate(req));
+    return;
+  }
+
+  // default
+  event.respondWith(staleWhileRevalidate(req));
 });
