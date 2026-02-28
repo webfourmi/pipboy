@@ -5,7 +5,7 @@ Voici la procédure joueurs  📟
 
 📲 Installer le PipBoy (1 fois)
 Ouvrez ce lien dans Chrome (Android) :
-https://webfourmi.github.io/pipboy/?v=19
+https://webfourmi.github.io/pipboy/?v=29
 Menu ⋮ → Installer l’application (ou “Ajouter à l’écran d’accueil”)
 Lancez l’app depuis l’icône sur l’écran d’accueil.
 
