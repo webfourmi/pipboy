@@ -4,7 +4,7 @@
 // - CSS/JS/images/icons: cache-first (rapide + offline)
 // - nettoyage automatique des anciens caches
 
-const CACHE_VERSION = "v28";
+const CACHE_VERSION = "v29";
 const STATIC_CACHE = `pipboy-static-${CACHE_VERSION}`;
 const HTML_CACHE   = `pipboy-html-${CACHE_VERSION}`;
 
