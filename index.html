@@ -212,12 +212,19 @@
       <h1>DATA</h1>
 
       <div class="card">
-        <h2>Journal de bord</h2>
-        <textarea id="log" rows="8" placeholder="Note rapide…"></textarea>
+        <div class="row" style="align-items:center; justify-content:space-between; gap:10px; margin-top:0;">
+          <h2 style="margin:0;">Journal de bord</h2>
+          <button id="openArchives" type="button">Archives</button>
+        </div>
+      
+        <textarea id="log" rows="8" placeholder="Note active…"></textarea>
+      
         <div class="row right">
           <button id="clearLog" class="danger" type="button">Effacer</button>
-          <button id="saveLog" type="button">Sauver</button>
+          <button id="saveLog" type="button">Archiver</button>
         </div>
+      
+        <p class="hint">“Archiver” envoie la note active dans les archives (datée), et remet la note active à vide.</p>
       </div>
 
       <!-- QUÊTES -->
