@@ -1,4 +1,7 @@
 // js/app.js
+import { $, qs, qsa, on } from "./js/core/dom.js";
+import { store } from "./js/core/store.js";
+import { escapeHtml, pad2, toDateTimeLocal, fromDateTimeLocal, clamp } from "./js/core/utils.js";
 import { initBoot } from "./features/boot.js";
 import { initTabs } from "./features/tabs.js";
 import { initModals } from "./features/modals.js";
