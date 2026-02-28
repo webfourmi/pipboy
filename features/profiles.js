@@ -33,6 +33,10 @@ export function setProfileData(id, data){
   store.set(profileKey(id), data);
 }
 
+export function deleteProfileData(id){
+  store.del(profileKey(id));
+}
+
 export function ensureActiveProfile(){
   const profiles = getProfiles();
   let activeId = getActiveId();
@@ -52,25 +56,16 @@ export function ensureActiveProfile(){
   return activeId;
 }
 
-export function initProfiles({ APP_VERSION }){
-  const id = ensureActiveProfile();
-  refreshProfilesUI(APP_VERSION);
-
-  const sel = $("profileSelect");
-  if (sel) {
-    sel.addEventListener("change", () => {
-      setActiveId(sel.value);
-      refreshProfilesUI(APP_VERSION);
-      document.dispatchEvent(new CustomEvent("pipboy:profile-changed"));
-    });
-  }
+function emitProfileChanged(){
+  document.dispatchEvent(new CustomEvent("pipboy:profile-changed"));
 }
 
 export function refreshProfilesUI(APP_VERSION){
   const profiles = getProfiles();
   const id = ensureActiveProfile();
-  const meta = profiles.find(p => p.id === id);
+  const meta = profiles.find(p => p.id === id) || profiles[0];
 
+  // Select
   const sel = $("profileSelect");
   if (sel){
     sel.innerHTML = "";
@@ -83,10 +78,92 @@ export function refreshProfilesUI(APP_VERSION){
     });
   }
 
+  // Champs modal
+  if ($("profileName")) $("profileName").value = meta?.name ?? "";
+  if ($("profileCampaign")) $("profileCampaign").value = meta?.campaign ?? "";
+
+  // UI “status”
   if ($("activeProfileHint")) {
     $("activeProfileHint").textContent =
       `PROFIL: ${meta?.name ?? "?"} • ${meta?.campaign ?? "—"} • LOCAL SAVE • ${APP_VERSION}`;
   }
   if ($("profileMiniLine")) $("profileMiniLine").textContent = `Campagne: ${meta?.campaign ?? "—"}`;
   if ($("profileNameSvg")) $("profileNameSvg").textContent = meta?.name ?? "P1";
+}
+
+export function initProfiles({ APP_VERSION }){
+  ensureActiveProfile();
+  refreshProfilesUI(APP_VERSION);
+
+  // change profil (select)
+  const sel = $("profileSelect");
+  if (sel) {
+    sel.addEventListener("change", () => {
+      setActiveId(sel.value);
+      refreshProfilesUI(APP_VERSION);
+      emitProfileChanged();
+    });
+  }
+
+  // Nouveau profil
+  const btnNew = $("newProfile");
+  if (btnNew){
+    btnNew.addEventListener("click", () => {
+      const profiles = getProfiles();
+      const id = uid();
+      const name = `P${profiles.length + 1}`;
+      profiles.push({ id, name, campaign: "ORION", createdAt: new Date().toISOString() });
+      setProfiles(profiles);
+      setProfileData(id, defaultProfileData());
+      setActiveId(id);
+
+      refreshProfilesUI(APP_VERSION);
+      emitProfileChanged();
+    });
+  }
+
+  // Sauver nom/campagne
+  const btnSave = $("saveProfileName");
+  if (btnSave){
+    btnSave.addEventListener("click", () => {
+      const id = ensureActiveProfile();
+      const profiles = getProfiles();
+      const p = profiles.find(x => x.id === id);
+      if (!p) return;
+
+      const newName = ($("profileName")?.value || "").trim();
+      const newCamp = ($("profileCampaign")?.value || "").trim();
+
+      if (newName) p.name = newName;
+      p.campaign = newCamp;
+
+      setProfiles(profiles);
+      refreshProfilesUI(APP_VERSION);
+      emitProfileChanged();
+    });
+  }
+
+  // Supprimer profil
+  const btnDel = $("deleteProfile");
+  if (btnDel){
+    btnDel.addEventListener("click", () => {
+      const profiles = getProfiles();
+      if (profiles.length <= 1){
+        alert("Impossible: il faut garder au moins 1 profil.");
+        return;
+      }
+      const id = ensureActiveProfile();
+      const p = profiles.find(x => x.id === id);
+      const ok = confirm(`Supprimer le profil "${p ? p.name : id}" ?`);
+      if (!ok) return;
+
+      const filtered = profiles.filter(x => x.id !== id);
+      setProfiles(filtered);
+      deleteProfileData(id);
+
+      setActiveId(filtered[0].id);
+      refreshProfilesUI(APP_VERSION);
+      emitProfileChanged();
+    });
+  }
 }
