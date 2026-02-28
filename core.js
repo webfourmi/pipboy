@@ -2,6 +2,16 @@ export const APP_VERSION = "v28";
 
 export const $ = (id) => document.getElementById(id);
 
+export function on(id, event, handler, options) {
+  const el = $(id);
+  if (el) el.addEventListener(event, handler, options);
+  return el;
+}
+
+export function qsa(sel, root = document) {
+  return Array.from(root.querySelectorAll(sel));
+}
+
 export const store = {
   get(k, fallback){ try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } },
   set(k, v){ localStorage.setItem(k, JSON.stringify(v)); },
