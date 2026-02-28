@@ -1355,8 +1355,12 @@
         profiles,
         dataByProfile: {}
       };
+      
       profiles.forEach(p => payload.dataByProfile[p.id] = getProfileData(p.id));
       if (backupBox) backupBox.value = JSON.stringify(payload, null, 2);
+      const json = JSON.stringify(payload, null, 2);
+      if (backupBox) backupBox.value = json;      
+      downloadTextFile(`pipboy-backup-${isoDay()}.json`, json);
     }
 
     function applyImport(){
@@ -1400,7 +1404,16 @@
       const meta = profiles.find(p => p.id === id) || { id, name:"Profil", campaign:"" };
       const payload = { v: 2, exportedAt: new Date().toISOString(), profile: meta, data: getProfileData(id) };
       backupProfileBox.value = JSON.stringify(payload, null, 2);
-    }
+      const json = JSON.stringify(payload, null, 2);
+      if (backupProfileBox) backupProfileBox.value = json;
+      
+      const safeName = (meta.name || "profil")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      
+      downloadTextFile(`pipboy-${safeName || "profil"}-${isoDay()}.json`, json);
+          }
 
     function applyImportActiveProfile(){
       const id = ensureActiveProfile();
@@ -1429,6 +1442,24 @@
       alert("Format non reconnu 😵‍💫");
     }
 
+    function downloadTextFile(filename, text, mime = "application/json") {
+      const blob = new Blob([text], { type: mime });
+      const url = URL.createObjectURL(blob);
+    
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    
+    function isoDay() {
+      return new Date().toISOString().slice(0, 10);
+    }
+    
     function normalizeQuest(q){
       const out = Object.assign({ id: uid(), title:"", status:"EN_COURS", notes:"", objectives:[], mj:{} }, q || {});
       out.objectives = Array.isArray(out.objectives) ? out.objectives : [];
@@ -1503,6 +1534,15 @@
       };
 
       packProfileBox.value = JSON.stringify(payload, null, 2);
+      const json = JSON.stringify(payload, null, 2);
+      if (packProfileBox) packProfileBox.value = json;
+      
+      const safeName = (meta.name || "profil")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      
+      downloadTextFile(`pipboy-pack-${safeName || "profil"}-${isoDay()}.json`, json);
     }
 
     function applyPackActive(){
