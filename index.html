@@ -877,7 +877,7 @@
 
     // ===== FICHE PJ =====
     const SKILLS = [
-      "adaptation","astrophysique","biologie_geologie",
+      "adaptation","astrophysique_mathematiques","biologie_geologie",
       "bricoler_bidouiller","comprendre_etrange","convaincre",
       "courir_sauter_nager","deplacement_zero_g","discretion","garder_son_calme",
       "observer","pilotage","programmation","reflexes","soigner","survie"
@@ -885,9 +885,9 @@
 
     const SKILLS_LABEL = {
       adaptation: "Adaptation",
-      astrophysique: "Astrophysique/Mathematiques",
-      biologie: "Biologie/Géologie",
-      bricoler: "Bricoler/Bidouiller",
+      astrophysique_mathematiques: "Astrophysique/ Mathématiques",
+      biologie_geologie: "Biologie/Géologie",
+      bricoler_bidouiller: "Bricoler/Bidouiller",
       comprendre_etrange: "Comprendre l’étrange",
       convaincre: "Convaincre",
       courir_sauter_nager: "Courir / Sauter / Nager",
@@ -1215,12 +1215,7 @@
       });
     }
 
-    // Journal
-    const btnSaveLog = $("saveLog");
-    const btnClearLog = $("clearLog");
-    if (btnSaveLog) btnSaveLog.addEventListener("click", saveLogOnly);
-    if (btnClearLog) btnClearLog.addEventListener("click", () => { if ($("log")) $("log").value = ""; saveLogOnly(); });
-
+    
     // INVENTAIRE
     function renderInv(){
       const id = ensureActiveProfile();
@@ -1916,7 +1911,7 @@
         const stamp = new Date().toISOString().slice(0,10);
         const header = `[PACK MJ ${obj.campaignId || ""} ${stamp}]`.trim();
         const block = `${header}\n${obj.briefing}\n\n`;
-        data.log = block + (data.log || "");
+        data.logDraft = block + (data.logDraft || "");
       }
 
       setProfileData(id, data);
