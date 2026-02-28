@@ -37,9 +37,9 @@ Gardez le JSON (au cas où vous changez de téléphone).
 
 //Voici la procédure MJ //
 
-🧑‍✈️ MJ: préparer et envoyer un Pack MJ (v19)
+🧑‍✈️ MJ: préparer et envoyer un Pack MJ 
 Ouvre le PipBoy :
-https://webfourmi.github.io/pipboy/?v=19
+https://webfourmi.github.io/pipboy/?v=29
 Sélectionne ton profil MJ (ou le perso “référence”) et mets la Campagne (ex: ORION) → Sauver
 Onglet DATA → Quêtes
 Ajoute/édite les quêtes + objectifs (ce que tu veux distribuer)
