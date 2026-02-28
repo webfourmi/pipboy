@@ -1,14 +1,11 @@
 // features/sheet.js
-import { $, qsa, on } from "../js/core/dom.js";
-import { clamp } from "../js/core/utils.js";
-import { ensureActiveProfile, getProfileData, setProfileData } from "./profiles.js";
+import { $ } from "../js/core/dom.js";
+import { clamp, escapeHtml } from "../js/core/utils.js";
+import { ensureActiveProfile, getProfileData, setProfileData, defaultProfileData } from "./profiles.js";
 
 /* =========================
-   CONFIG
+   CONFIG SKILLS
 ========================= */
-
-const STATS = ["for", "dex", "end", "int", "intu"];
-
 const SKILLS = [
   "adaptation",
   "astrophysique_mathematiques",
@@ -48,31 +45,170 @@ const SKILLS_LABEL = {
 };
 
 /* =========================
-   HELPERS UI
+   HELPERS
 ========================= */
+function uid() {
+  return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+}
+
+function getSheet() {
+  const id = ensureActiveProfile();
+  const data = getProfileData(id);
+
+  // initialise si manque
+  if (!data.sheet) data.sheet = defaultProfileData().sheet;
+
+  // valeurs par défaut complètes (au cas où profiles.js est minimal)
+  const base = {
+    locked: true,
+    hp: 10,
+    hpMax: 20,
+    wounds: "",
+    san: 10,
+    sanMax: 20,
+    troubles: "",
+    stats: {
+      for: { v: 10, max: 20 },
+      dex: { v: 10, max: 20 },
+      end: { v: 10, max: 20 },
+      int: { v: 10, max: 20 },
+      intu: { v: 10, max: 20 },
+    },
+    skills: {},
+    combat: {
+      ranged: 0,
+      melee: 0,
+      prot: 0,
+      w1: { name: "", dmg: "" },
+      w2: { name: "", dmg: "" },
+    },
+    specials: [],
+  };
+
+  // merge doux
+  data.sheet = {
+    ...base,
+    ...(data.sheet || {}),
+    stats: { ...base.stats, ...(data.sheet.stats || {}) },
+    skills: { ...(data.sheet.skills || {}) },
+    combat: { ...base.combat, ...(data.sheet.combat || {}) },
+    specials: Array.isArray(data.sheet.specials) ? data.sheet.specials : base.specials,
+  };
+
+  // normalisation nums
+  data.sheet.hpMax = Number.isFinite(+data.sheet.hpMax) ? Math.max(0, +data.sheet.hpMax) : base.hpMax;
+  data.sheet.sanMax = Number.isFinite(+data.sheet.sanMax) ? Math.max(0, +data.sheet.sanMax) : base.sanMax;
+
+  data.sheet.hp = Number.isFinite(+data.sheet.hp) ? +data.sheet.hp : base.hp;
+  data.sheet.san = Number.isFinite(+data.sheet.san) ? +data.sheet.san : base.san;
+
+  data.sheet.hp = clamp(data.sheet.hp, 0, data.sheet.hpMax);
+  data.sheet.san = clamp(data.sheet.san, 0, data.sheet.sanMax);
+
+  // stats
+  ["for", "dex", "end", "int", "intu"].forEach((k) => {
+    const cur = data.sheet.stats[k] || { v: 10, max: 20 };
+    const mx = Number.isFinite(+cur.max) ? Math.max(1, +cur.max) : 20;
+    const vv = Number.isFinite(+cur.v) ? clamp(+cur.v, 0, mx) : 10;
+    data.sheet.stats[k] = { v: vv, max: mx };
+  });
+
+  // combat nums
+  data.sheet.combat.ranged = Number.isFinite(+data.sheet.combat.ranged) ? clamp(+data.sheet.combat.ranged, 0, 100) : 0;
+  data.sheet.combat.melee = Number.isFinite(+data.sheet.combat.melee) ? clamp(+data.sheet.combat.melee, 0, 100) : 0;
+  data.sheet.combat.prot = Number.isFinite(+data.sheet.combat.prot) ? clamp(+data.sheet.combat.prot, 0, 999) : 0;
+
+  setProfileData(id, data);
+  return data.sheet;
+}
+
+function setSheet(nextSheet) {
+  const id = ensureActiveProfile();
+  const data = getProfileData(id);
+  data.sheet = nextSheet;
+  setProfileData(id, data);
+}
 
 function syncGauge(rangeEl, fillEl, labelEl, max) {
   if (!rangeEl || !fillEl || !labelEl) return;
   const v = Number(rangeEl.value || 0);
-  const m = Math.max(1, Number(max ?? rangeEl.max ?? 20));
-  const pct = Math.round((v / m) * 100);
+  const m = Math.max(0, Number(max ?? rangeEl.max ?? 0));
+  const pct = m > 0 ? Math.round((v / m) * 100) : 0;
   fillEl.style.width = `${pct}%`;
   labelEl.textContent = `${v}/${m}`;
 }
 
 function setDisabled(ids, disabled) {
   ids.forEach((id) => {
-    const el = $(id);
+    const el = document.getElementById(id);
     if (el) el.disabled = !!disabled;
   });
 }
 
 function setDisabledSelector(selector, disabled) {
-  qsa(selector).forEach((el) => {
+  document.querySelectorAll(selector).forEach((el) => {
     el.disabled = !!disabled;
   });
 }
 
+/* =========================
+   UI BUILDERS
+========================= */
+function buildSkillsUI() {
+  const box = $("skillsGrid");
+  if (!box) return;
+
+  // éviter double-build si init appelé 2 fois
+  if (box.dataset.built === "1") return;
+
+  box.innerHTML = "";
+  SKILLS.forEach((k) => {
+    const wrap = document.createElement("label");
+    wrap.className = "field";
+    wrap.innerHTML = `
+      <span>${SKILLS_LABEL[k] || k}</span>
+      <input data-skill="${k}" type="number" min="0" max="100" step="1" value="0">
+    `;
+    box.appendChild(wrap);
+  });
+
+  box.dataset.built = "1";
+}
+
+function renderSpecials(list) {
+  const box = $("specList");
+  if (!box) return;
+
+  box.innerHTML = "";
+  if (!list || list.length === 0) {
+    box.innerHTML = `<p class="hint">Aucune compétence spéciale.</p>`;
+    return;
+  }
+
+  list.forEach((sp) => {
+    const row = document.createElement("div");
+    row.className = "specRow";
+    row.innerHTML = `
+      <div>${escapeHtml(sp.name || "")}</div>
+      <div style="text-align:right; font-weight:900;">${Number(sp.val || 0)}%</div>
+      <button class="mini danger" type="button" data-del="${sp.id}">X</button>
+    `;
+    box.appendChild(row);
+  });
+
+  box.querySelectorAll("button[data-del]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const sheet = getSheet();
+      sheet.specials = (sheet.specials || []).filter((x) => x.id !== btn.getAttribute("data-del"));
+      setSheet(sheet);
+      renderSpecials(sheet.specials);
+    });
+  });
+}
+
+/* =========================
+   LOCK
+========================= */
 function applySheetLockUI(locked) {
   const btn = $("toggleSheetLock");
   const hint = $("sheetLockHint");
@@ -85,9 +221,9 @@ function applySheetLockUI(locked) {
   if (hint) hint.style.display = locked ? "block" : "none";
 
   // PV / SAN
-  setDisabled(["pjHp", "pjHpMax", "pjSan", "pjSanMax", "pjWounds", "pjTroubles"], locked);
+  setDisabled(["pjHp", "pjHpMax", "pjSan", "pjSanMax"], locked);
 
-  // Caracs valeur + max
+  // caracs valeur + max
   setDisabled(
     [
       "stat_for",
@@ -104,16 +240,16 @@ function applySheetLockUI(locked) {
     locked
   );
 
-  // Compétences
+  // skills
   setDisabledSelector('#skillsGrid input[data-skill]', locked);
 
-  // Combat (verrouillage demandé ✅)
+  // combat
   setDisabled(
     ["combat_ranged", "combat_melee", "combat_prot", "w1_name", "w1_dmg", "w2_name", "w2_dmg"],
     locked
   );
 
-  // Petit effet visuel si tu as la classe CSS
+  // dim visuel (si tu as la classe CSS lockedDim)
   const cardsToDim = [
     $("pjHp")?.closest(".card.sub"),
     $("pjSan")?.closest(".card.sub"),
@@ -125,330 +261,208 @@ function applySheetLockUI(locked) {
   cardsToDim.forEach((c) => c.classList.toggle("lockedDim", locked));
 }
 
-/* =========================
-   DATA NORMALIZATION
-========================= */
-
-function ensureSheetModel(data) {
-  data.sheet = data.sheet || {};
-  const sh = data.sheet;
-
-  // defaults (pas de migration ancienne demandée)
-  if (typeof sh.locked !== "boolean") sh.locked = true;
-
-  if (!Number.isFinite(+sh.hpMax)) sh.hpMax = 10;
-  if (!Number.isFinite(+sh.hp)) sh.hp = Math.min(10, sh.hpMax);
-  sh.hpMax = Math.max(0, +sh.hpMax);
-  sh.hp = clamp(+sh.hp, 0, sh.hpMax);
-
-  if (!Number.isFinite(+sh.sanMax)) sh.sanMax = 10;
-  if (!Number.isFinite(+sh.san)) sh.san = Math.min(10, sh.sanMax);
-  sh.sanMax = Math.max(0, +sh.sanMax);
-  sh.san = clamp(+sh.san, 0, sh.sanMax);
-
-  if (typeof sh.wounds !== "string") sh.wounds = "";
-  if (typeof sh.troubles !== "string") sh.troubles = "";
-
-  // stats
-  sh.stats = sh.stats && typeof sh.stats === "object" ? sh.stats : {};
-  STATS.forEach((k) => {
-    const cur = sh.stats[k] && typeof sh.stats[k] === "object" ? sh.stats[k] : { v: 10, max: 20 };
-    if (!Number.isFinite(+cur.max)) cur.max = 20;
-    if (!Number.isFinite(+cur.v)) cur.v = 10;
-    cur.max = Math.max(1, +cur.max);
-    cur.v = clamp(+cur.v, 0, cur.max);
-    sh.stats[k] = cur;
-  });
-
-  // skills
-  sh.skills = sh.skills && typeof sh.skills === "object" ? sh.skills : {};
-  SKILLS.forEach((k) => {
-    const v = Number.isFinite(+sh.skills[k]) ? +sh.skills[k] : 0;
-    sh.skills[k] = clamp(v, 0, 100);
-  });
-
-  // combat
-  sh.combat = sh.combat && typeof sh.combat === "object" ? sh.combat : {};
-  sh.combat.ranged = clamp(Number(sh.combat.ranged || 0), 0, 100);
-  sh.combat.melee = clamp(Number(sh.combat.melee || 0), 0, 100);
-  sh.combat.prot = clamp(Number(sh.combat.prot || 0), 0, 999);
-
-  sh.combat.w1 = sh.combat.w1 && typeof sh.combat.w1 === "object" ? sh.combat.w1 : {};
-  sh.combat.w2 = sh.combat.w2 && typeof sh.combat.w2 === "object" ? sh.combat.w2 : {};
-  if (typeof sh.combat.w1.name !== "string") sh.combat.w1.name = "";
-  if (typeof sh.combat.w1.dmg !== "string") sh.combat.w1.dmg = "";
-  if (typeof sh.combat.w2.name !== "string") sh.combat.w2.name = "";
-  if (typeof sh.combat.w2.dmg !== "string") sh.combat.w2.dmg = "";
-
-  // specials (géré ici minimalement, on ne casse rien)
-  sh.specials = Array.isArray(sh.specials) ? sh.specials : [];
-
-  return data;
-}
-
-function getActiveData() {
-  const id = ensureActiveProfile();
-  const data = getProfileData(id);
-  return ensureSheetModel(data);
-}
-
-function saveActiveData(data) {
-  const id = ensureActiveProfile();
-  setProfileData(id, data);
+function toggleSheetLock() {
+  const sheet = getSheet();
+  sheet.locked = !sheet.locked;
+  setSheet(sheet);
+  applySheetLockUI(!!sheet.locked);
 }
 
 /* =========================
-   SKILLS UI
+   LOAD / SAVE
 ========================= */
-
-function buildSkillsUI() {
-  const box = $("skillsGrid");
-  if (!box) return;
-
-  box.innerHTML = "";
-  SKILLS.forEach((k) => {
-    const wrap = document.createElement("label");
-    wrap.className = "field";
-    wrap.innerHTML = `
-      <span>${SKILLS_LABEL[k] || k}</span>
-      <input data-skill="${k}" type="number" min="0" max="100" step="1" value="0">
-    `;
-    box.appendChild(wrap);
-  });
-}
-
-/* =========================
-   LOAD -> UI
-========================= */
-
-function loadSheetToUI(data) {
-  const sh = ensureSheetModel(data).sheet;
-
-  // Lock state
-  applySheetLockUI(!!sh.locked);
+function loadSheetToUI() {
+  const sh = getSheet();
 
   // PV
-  if ($("pjHpMax")) $("pjHpMax").value = sh.hpMax;
+  if ($("pjHpMax")) $("pjHpMax").value = sh.hpMax ?? 0;
   if ($("pjHp")) {
-    $("pjHp").max = String(sh.hpMax);
-    $("pjHp").value = String(sh.hp);
+    $("pjHp").max = String(sh.hpMax ?? 0);
+    $("pjHp").value = sh.hp ?? 0;
   }
   syncGauge($("pjHp"), $("pjHpFill"), $("pjHpLabel"), sh.hpMax);
-  if ($("pjWounds")) $("pjWounds").value = sh.wounds;
+  if ($("pjWounds")) $("pjWounds").value = sh.wounds ?? "";
 
   // SAN
-  if ($("pjSanMax")) $("pjSanMax").value = sh.sanMax;
+  if ($("pjSanMax")) $("pjSanMax").value = sh.sanMax ?? 0;
   if ($("pjSan")) {
-    $("pjSan").max = String(sh.sanMax);
-    $("pjSan").value = String(sh.san);
+    $("pjSan").max = String(sh.sanMax ?? 0);
+    $("pjSan").value = sh.san ?? 0;
   }
   syncGauge($("pjSan"), $("pjSanFill"), $("pjSanLabel"), sh.sanMax);
-  if ($("pjTroubles")) $("pjTroubles").value = sh.troubles;
+  if ($("pjTroubles")) $("pjTroubles").value = sh.troubles ?? "";
 
   // Stats
-  STATS.forEach((k) => {
-    const r = $(`stat_${k}`);
-    const v = $(`stat_${k}_val`);
-    const m = $(`stat_${k}_max`);
-    const st = sh.stats[k];
+  const setStat = (key) => {
+    const r = $(`stat_${key}`);
+    const v = $(`stat_${key}_val`);
+    const m = $(`stat_${key}_max`);
+    const st = sh.stats?.[key] || { v: 10, max: 20 };
 
-    if (m) m.value = st.max;
+    if (m) m.value = st.max ?? 20;
     if (r) {
-      r.max = String(st.max);
-      r.value = String(st.v);
+      r.max = String(st.max ?? 20);
+      r.value = st.v ?? 10;
     }
-    if (v) v.textContent = String(st.v);
-  });
+    if (v) v.textContent = String(st.v ?? 10);
+  };
+  ["for", "dex", "end", "int", "intu"].forEach(setStat);
 
   // Skills
-  qsa('#skillsGrid input[data-skill]').forEach((inp) => {
+  const skills = sh.skills || {};
+  document.querySelectorAll("#skillsGrid input[data-skill]").forEach((inp) => {
     const k = inp.getAttribute("data-skill");
-    inp.value = String(sh.skills[k] ?? 0);
+    inp.value = Number(skills[k] ?? 0);
   });
 
   // Combat
-  if ($("combat_ranged")) $("combat_ranged").value = String(sh.combat.ranged ?? 0);
-  if ($("combat_melee")) $("combat_melee").value = String(sh.combat.melee ?? 0);
-  if ($("combat_prot")) $("combat_prot").value = String(sh.combat.prot ?? 0);
+  if ($("combat_ranged")) $("combat_ranged").value = Number(sh.combat?.ranged ?? 0);
+  if ($("combat_melee")) $("combat_melee").value = Number(sh.combat?.melee ?? 0);
+  if ($("combat_prot")) $("combat_prot").value = Number(sh.combat?.prot ?? 0);
+  if ($("w1_name")) $("w1_name").value = sh.combat?.w1?.name ?? "";
+  if ($("w1_dmg")) $("w1_dmg").value = sh.combat?.w1?.dmg ?? "";
+  if ($("w2_name")) $("w2_name").value = sh.combat?.w2?.name ?? "";
+  if ($("w2_dmg")) $("w2_dmg").value = sh.combat?.w2?.dmg ?? "";
 
-  if ($("w1_name")) $("w1_name").value = sh.combat.w1?.name ?? "";
-  if ($("w1_dmg")) $("w1_dmg").value = sh.combat.w1?.dmg ?? "";
-  if ($("w2_name")) $("w2_name").value = sh.combat.w2?.name ?? "";
-  if ($("w2_dmg")) $("w2_dmg").value = sh.combat.w2?.dmg ?? "";
+  // Specials
+  renderSpecials(sh.specials || []);
+
+  // lock
+  applySheetLockUI(!!sh.locked);
 }
 
-/* =========================
-   UI -> READ
-========================= */
+function readSheetFromUI() {
+  const sh = getSheet(); // base normalisée
 
-function readSheetFromUI(existingLocked) {
-  const sh = {
-    locked: !!existingLocked,
-    hp: 0,
-    hpMax: 0,
-    wounds: "",
-    san: 0,
-    sanMax: 0,
-    troubles: "",
-    stats: {},
-    skills: {},
-    combat: {
-      ranged: 0,
-      melee: 0,
-      prot: 0,
-      w1: { name: "", dmg: "" },
-      w2: { name: "", dmg: "" },
-    },
-    specials: [], // on garde l’existant ailleurs
-  };
-
-  // PV/SAN
-  sh.hpMax = Math.max(0, Number($("pjHpMax")?.value ?? 0));
-  sh.hp = clamp(Number($("pjHp")?.value ?? 0), 0, sh.hpMax);
+  // PV
+  sh.hpMax = Number($("pjHpMax")?.value ?? sh.hpMax ?? 0);
+  sh.hpMax = Math.max(0, sh.hpMax);
+  sh.hp = Number($("pjHp")?.value ?? sh.hp ?? 0);
+  sh.hp = clamp(sh.hp, 0, sh.hpMax);
   sh.wounds = $("pjWounds")?.value ?? "";
 
-  sh.sanMax = Math.max(0, Number($("pjSanMax")?.value ?? 0));
-  sh.san = clamp(Number($("pjSan")?.value ?? 0), 0, sh.sanMax);
+  // SAN
+  sh.sanMax = Number($("pjSanMax")?.value ?? sh.sanMax ?? 0);
+  sh.sanMax = Math.max(0, sh.sanMax);
+  sh.san = Number($("pjSan")?.value ?? sh.san ?? 0);
+  sh.san = clamp(sh.san, 0, sh.sanMax);
   sh.troubles = $("pjTroubles")?.value ?? "";
 
   // Stats
-  STATS.forEach((k) => {
-    const max = Math.max(1, Number($(`stat_${k}_max`)?.value ?? 20));
-    const v = clamp(Number($(`stat_${k}`)?.value ?? 0), 0, max);
-    sh.stats[k] = { v, max };
-  });
+  const getStat = (k) => {
+    const mx = Number($(`stat_${k}_max`)?.value ?? sh.stats?.[k]?.max ?? 20);
+    const max = Math.max(1, mx);
+    const v = Number($(`stat_${k}`)?.value ?? sh.stats?.[k]?.v ?? 0);
+    return { max, v: clamp(v, 0, max) };
+  };
+  sh.stats = {
+    for: getStat("for"),
+    dex: getStat("dex"),
+    end: getStat("end"),
+    int: getStat("int"),
+    intu: getStat("intu"),
+  };
 
   // Skills
-  qsa('#skillsGrid input[data-skill]').forEach((inp) => {
+  const nextSkills = {};
+  document.querySelectorAll("#skillsGrid input[data-skill]").forEach((inp) => {
     const k = inp.getAttribute("data-skill");
-    const v = clamp(Number(inp.value ?? 0), 0, 100);
-    sh.skills[k] = v;
+    nextSkills[k] = clamp(Number(inp.value || 0), 0, 100);
   });
+  sh.skills = nextSkills;
 
   // Combat
-  sh.combat.ranged = clamp(Number($("combat_ranged")?.value ?? 0), 0, 100);
-  sh.combat.melee = clamp(Number($("combat_melee")?.value ?? 0), 0, 100);
-  sh.combat.prot = clamp(Number($("combat_prot")?.value ?? 0), 0, 999);
-  sh.combat.w1.name = $("w1_name")?.value ?? "";
-  sh.combat.w1.dmg = $("w1_dmg")?.value ?? "";
-  sh.combat.w2.name = $("w2_name")?.value ?? "";
-  sh.combat.w2.dmg = $("w2_dmg")?.value ?? "";
+  sh.combat = {
+    ranged: clamp(Number($("combat_ranged")?.value || 0), 0, 100),
+    melee: clamp(Number($("combat_melee")?.value || 0), 0, 100),
+    prot: clamp(Number($("combat_prot")?.value || 0), 0, 999),
+    w1: { name: $("w1_name")?.value || "", dmg: $("w1_dmg")?.value || "" },
+    w2: { name: $("w2_name")?.value || "", dmg: $("w2_dmg")?.value || "" },
+  };
+
+  // specials: conservés déjà en storage (mais on les garde)
+  // sh.specials inchangé
 
   return sh;
 }
 
-/* =========================
-   SAVE
-========================= */
-
 function saveSheet() {
-  const data = getActiveData();
-  const locked = !!data.sheet.locked;
-
-  // si verrouillé: on ignore (sécurité)
-  if (locked) {
+  const sh = getSheet();
+  if (sh.locked) {
     applySheetLockUI(true);
-    // on recharge l’UI pour être sûr
-    loadSheetToUI(data);
     return;
   }
-
-  // on récupère l’existant pour garder specials
-  const prevSpecials = Array.isArray(data.sheet.specials) ? data.sheet.specials : [];
-
-  const sh = readSheetFromUI(locked);
-  sh.specials = prevSpecials;
-
-  data.sheet = sh;
-  ensureSheetModel(data);
-  saveActiveData(data);
-
-  // refresh UI (barres/labels)
-  loadSheetToUI(data);
+  const next = readSheetFromUI();
+  setSheet(next);
+  loadSheetToUI(); // refresh bars/labels
 }
 
 /* =========================
-   LOCK TOGGLE
+   EVENTS
 ========================= */
-
-function toggleSheetLock() {
-  const data = getActiveData();
-  data.sheet.locked = !data.sheet.locked;
-  saveActiveData(data);
-  applySheetLockUI(data.sheet.locked);
-}
-
-/* =========================
-   BIND EVENTS
-========================= */
-
 function bindEvents() {
-  // lock button
-  on($("toggleSheetLock"), "click", toggleSheetLock);
+  const lockBtn = $("toggleSheetLock");
+  if (lockBtn) lockBtn.addEventListener("click", toggleSheetLock);
 
-  // PV/SAN + max + textes + combat
-  const watched = [
-    "pjHp",
-    "pjHpMax",
-    "pjWounds",
-    "pjSan",
-    "pjSanMax",
-    "pjTroubles",
-    "combat_ranged",
-    "combat_melee",
-    "combat_prot",
-    "w1_name",
-    "w1_dmg",
-    "w2_name",
-    "w2_dmg",
-  ];
+  // PV/SAN sliders
+  ["input", "change"].forEach((evt) => {
+    $("pjHp")?.addEventListener(evt, saveSheet);
+    $("pjSan")?.addEventListener(evt, saveSheet);
 
-  watched.forEach((id) => {
-    const el = $(id);
-    if (!el) return;
-    el.addEventListener("input", saveSheet);
-    el.addEventListener("change", saveSheet);
+    [
+      "pjHpMax",
+      "pjSanMax",
+      "pjWounds",
+      "pjTroubles",
+      "combat_ranged",
+      "combat_melee",
+      "combat_prot",
+      "w1_name",
+      "w1_dmg",
+      "w2_name",
+      "w2_dmg",
+    ].forEach((id) => $(id)?.addEventListener(evt, saveSheet));
+
+    ["for", "dex", "end", "int", "intu"].forEach((k) => {
+      $(`stat_${k}`)?.addEventListener(evt, saveSheet);
+      $(`stat_${k}_max`)?.addEventListener(evt, saveSheet);
+    });
+
+    document.querySelectorAll("#skillsGrid input[data-skill]").forEach((inp) => {
+      inp.addEventListener(evt, saveSheet);
+    });
   });
 
-  // stats value + max
-  STATS.forEach((k) => {
-    const r = $(`stat_${k}`);
-    const m = $(`stat_${k}_max`);
-    if (r) {
-      r.addEventListener("input", saveSheet);
-      r.addEventListener("change", saveSheet);
-    }
-    if (m) {
-      m.addEventListener("input", saveSheet);
-      m.addEventListener("change", saveSheet);
-    }
+  // Specials add
+  $("addSpec")?.addEventListener("click", () => {
+    const sh = getSheet();
+    if (sh.locked) return;
+
+    const name = ($("specName")?.value || "").trim();
+    const val = clamp(Number($("specVal")?.value || 0), 0, 100);
+    if (!name) return;
+
+    sh.specials = Array.isArray(sh.specials) ? sh.specials : [];
+    sh.specials.unshift({ id: uid(), name, val });
+    setSheet(sh);
+
+    if ($("specName")) $("specName").value = "";
+    if ($("specVal")) $("specVal").value = "";
+    renderSpecials(sh.specials);
   });
 
-  // skills
-  qsa('#skillsGrid input[data-skill]').forEach((inp) => {
-    inp.addEventListener("input", saveSheet);
-    inp.addEventListener("change", saveSheet);
-  });
-
-  // changement de profil
+  // refresh si profil change
   document.addEventListener("pipboy:profile-changed", () => {
-    const data = getActiveData();
-    loadSheetToUI(data);
+    buildSkillsUI();
+    loadSheetToUI();
   });
 }
 
 /* =========================
-   INIT
+   PUBLIC INIT
 ========================= */
-
 export function initSheet() {
-  // construit la grille skills si vide
   buildSkillsUI();
-
-  // charge la fiche du profil actif
-  const data = getActiveData();
-  loadSheetToUI(data);
-
-  // bind events
   bindEvents();
+  loadSheetToUI();
 }
