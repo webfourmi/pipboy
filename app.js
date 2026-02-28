@@ -1,39 +1,34 @@
-import { initBootOncePerSession, initClock, initTabs, initEscClose } from "./ui.js";
-import { initProfiles, loadActiveProfileToUI, setOnProfileChanged } from "./profiles.js";
+// js/app.js
+import { initBoot } from "./features/boot.js";
+import { initTabs } from "./features/tabs.js";
+import { initModals } from "./features/modals.js";
+import { initProfiles } from "./features/profiles.js";
+import { initSheet } from "./features/sheet.js";
+import { initJournal } from "./features/journal.js";
+import { initInventory } from "./features/inventory.js";
+import { initQuests } from "./features/quests.js";
+import { initIO } from "./features/io.js";
 
-// Les modules suivants, on les branchera juste après
-import { initArchivesModal, closeArchivesModal, renderArchives, loadDraftToUI } from "./journal.js";
-import { initIOModal, closeIOModal } from "./io.js"; // (à créer ensuite)
-import { initSheet, loadSheetToUI } from "./sheet.js";
-import { initInv, renderInv } from "./inv.js";
-import { initQuests, renderQuests } from "./quests.js";
-import { registerSW } from "./pwa.js";
+export const APP_VERSION = "v28";
 
-initBootOncePerSession();
-initClock();
-initTabs();
+function init() {
+  initBoot();
+  initTabs();
+  initModals();
 
-const { closeProfileModal } = initProfiles();
-initArchivesModal();
-initIOModal();
-initSheet();
-initInv();
-initQuests();
+  // ordre important: profils avant features qui lisent/écrivent le profil actif
+  initProfiles({ APP_VERSION });
 
-setOnProfileChanged(() => {
-  // appelé à chaque changement profil + au démarrage
-  loadDraftToUI();
-  renderArchives();
-  renderInv();
-  renderQuests();
-  loadSheetToUI();
-});
+  initSheet();
+  initJournal();
+  initInventory();
+  initQuests();
+  initIO();
 
-initEscClose({
-  closeArchives: closeArchivesModal,
-  closeIO: closeIOModal,
-  closeProfile: closeProfileModal
-});
+  // SW (si tu veux le garder ici)
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js", { scope: "./" });
+  }
+}
 
-loadActiveProfileToUI();
-registerSW();
+init();
