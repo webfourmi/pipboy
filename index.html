@@ -437,6 +437,21 @@
   </main>
   
 <script type="module" src="app.js?v=29"></script>
+  <script>
+  // MODE SECOURS: on enlève tous les Service Workers (sans DevTools)
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations()
+      .then(regs => Promise.all(regs.map(r => r.unregister())))
+      .catch(()=>{});
+  }
+
+  // On cache le boot au cas où (fail-safe)
+  const boot = document.getElementById("boot");
+  if (boot) {
+    boot.classList.remove("show");
+    boot.setAttribute("aria-hidden", "true");
+  }
+</script>
   
 </body>
 </html>
