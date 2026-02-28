@@ -625,6 +625,7 @@
 
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
+      if (archivesModal && archivesModal.classList.contains("show")) { closeArchives(); return; }
       if (ioModal && ioModal.classList.contains("show")) { closeIOModal(); return; }
       if (profileModal && profileModal.classList.contains("show")) closeProfileModal();
     });
