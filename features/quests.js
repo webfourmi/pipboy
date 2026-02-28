@@ -1,1 +1,1 @@
-
+export function initQuests(){}
