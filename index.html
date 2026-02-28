@@ -405,7 +405,28 @@
         </div>
       </div>
     </div>
-
+     <div id="archivesModal" class="modal" aria-hidden="true">
+        <div class="modalBackdrop" id="closeArchivesBackdrop"></div>
+      
+        <div class="modalPanel" role="dialog" aria-modal="true" aria-labelledby="archivesTitle">
+          <div class="modalHead">
+            <div>
+              <div class="modalTitle" id="archivesTitle">ARCHIVES</div>
+              <div class="tiny" id="archivesHint">Plus récent en haut</div>
+            </div>
+            <button id="closeArchives" class="miniBtn" type="button">FERMER</button>
+          </div>
+      
+          <div class="modalBody">
+            <div class="row" style="margin-top:0;">
+              <button id="exportArchives" type="button">Copier tout</button>
+              <button id="clearArchives" class="danger" type="button">Vider</button>
+            </div>
+      
+            <div id="archivesList" class="archivesList"></div>
+          </div>
+        </div>
+      </div>
   </main>
 
   <script>
