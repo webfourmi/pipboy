@@ -543,5 +543,4 @@ input[disabled], select[disabled], textarea[disabled]{
   opacity: .65;
   filter: saturate(.7);
 }
-/* BOOT OFF */
-#boot{ display:none !important; }
+
