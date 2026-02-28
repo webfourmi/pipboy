@@ -80,7 +80,7 @@
 
               <label class="maxBox">
                 <span class="maxLabel">MAX PV</span>
-                <input id="pjHpMax" type="number" min="1" max="999" step="1" value="20">
+                <input id="pjHpMax" type="number" min="0" max="999" step="1" value="20">
               </label>
             </div>
 
@@ -98,7 +98,7 @@
 
               <label class="maxBox">
                 <span class="maxLabel">MAX SAN</span>
-                <input id="pjSanMax" type="number" min="1" max="999" step="1" value="20">
+                <input id="pjSanMax" type="number" min="0" max="999" step="1" value="20">
               </label>
             </div>
 
@@ -566,10 +566,10 @@
         sheet: {
           locked: true,
           hp: 10,
-          hpMax: 20,
+          hpMax: 10,
           wounds: "",
           san: 10,
-          sanMax: 20,
+          sanMax: 10,
           troubles: "",
           stats: {
             for: { v: 10, max: 20 },
@@ -774,20 +774,17 @@
 
     // ===== FICHE PJ =====
     const SKILLS = [
-      "adaptation","astrophysique","mathematiques","biologie","geologie",
-      "bricoler","bidouiller","comprendre_etrange","convaincre",
+      "adaptation","astrophysique","biologie_geologie",
+      "bricoler_bidouiller","comprendre_etrange","convaincre",
       "courir_sauter_nager","deplacement_zero_g","discretion","garder_son_calme",
       "observer","pilotage","programmation","reflexes","soigner","survie"
     ];
 
     const SKILLS_LABEL = {
       adaptation: "Adaptation",
-      astrophysique: "Astrophysique",
-      mathematiques: "Mathématiques",
-      biologie: "Biologie",
-      geologie: "Géologie",
-      bricoler: "Bricoler",
-      bidouiller: "Bidouiller",
+      astrophysique: "Astrophysique/Mathematiques",
+      biologie: "Biologie/Géologie",
+      bricoler: "Bricoler/Bidouiller",
       comprendre_etrange: "Comprendre l’étrange",
       convaincre: "Convaincre",
       courir_sauter_nager: "Courir / Sauter / Nager",
