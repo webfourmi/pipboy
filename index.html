@@ -490,6 +490,21 @@
     }
     tick(); setInterval(tick, 1000);
 
+    function pad2(n){ return String(n).padStart(2,"0"); }
+      
+      // Date -> "YYYY-MM-DDTHH:MM" (format datetime-local)
+      function toDateTimeLocal(ts){
+        const d = new Date(ts);
+        return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+      }
+      
+      // "YYYY-MM-DDTHH:MM" -> timestamp (ms)
+      function fromDateTimeLocal(str){
+        // new Date("YYYY-MM-DDTHH:MM") marche en local sur la plupart des navigateurs modernes
+        const d = new Date(str);
+        return Number.isNaN(d.getTime()) ? Date.now() : d.getTime();
+      }
+
     // Navigation onglets
     document.querySelectorAll('.tab').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1084,6 +1099,7 @@
       const data = getProfileData(id);
 
       if ($("log")) $("log").value = data.logDraft ?? "";
+      if ($("logWhen")) $("logWhen").value = toDateTimeLocal(Date.now());
       renderArchives();
 
       renderInv();
@@ -1155,11 +1171,13 @@
       if (!text) return;
     
       const { entries } = getJournalData();
-      entries.unshift({ id: uid(), ts: Date.now(), text });
-    
+      const whenStr = $("logWhen") ? $("logWhen").value : "";
+      const ts = whenStr ? fromDateTimeLocal(whenStr) : Date.now();
+      entries.unshift({ id: uid(), ts, text });
+          
       // on archive + on vide la note active
       setJournalData("", entries);
-    
+     
       if (logEl) logEl.value = "";
       renderArchives();
     });
@@ -1167,6 +1185,7 @@
     if (btnClearDraft) btnClearDraft.addEventListener("click", () => {
       setJournalData("", getJournalData().entries);
       if ($("log")) $("log").value = "";
+      if ($("logWhen")) $("logWhen").value = toDateTimeLocal(Date.now());
     });
     
     // Charger la note active au changement de profil
