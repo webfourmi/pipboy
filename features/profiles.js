@@ -9,13 +9,32 @@ function uid(){
   return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
 }
 
+// dans features/profiles.js
 export function defaultProfileData(){
   return {
     logDraft: "",
     logEntries: [],
     inv: [],
     quests: [],
-    sheet: { locked: true }
+    sheet: {
+      locked: true,
+      hp: 10,
+      hpMax: 20,
+      wounds: "",
+      san: 10,
+      sanMax: 20,
+      troubles: "",
+      stats: {
+        for: { v: 10, max: 20 },
+        dex: { v: 10, max: 20 },
+        end: { v: 10, max: 20 },
+        int: { v: 10, max: 20 },
+        intu:{ v: 10, max: 20 }
+      },
+      skills: {},
+      combat: { ranged: 0, melee: 0, prot: 0, w1:{name:"", dmg:""}, w2:{name:"", dmg:""} },
+      specials: []
+    }
   };
 }
 
