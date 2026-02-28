@@ -7,13 +7,11 @@
   <title>Pip-Boy Spatial v29</title>
 
   <link rel="manifest" href="manifest.json?v=29">
-  <link rel="stylesheet" href="style.css?v=29" />
+  <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="icons/favicon.ico">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
 </head>
 
-
-  
 <body>
   <!-- BOOT OVERLAY -->
   <div id="boot" class="boot show" aria-hidden="false">
@@ -65,12 +63,11 @@
       <div class="card">
         <div class="sheetHead">
           <h2 style="margin:0;">Fiche PJ</h2>
-          <button id="toggleSheetLock" class="miniBtn" type="button" aria-pressed="false">🔓 ÉDITION</button>
+          <button id="toggleSheetLock" class="miniBtn" type="button" aria-pressed="true">🔒 ÉDITION</button>
         </div>
-        <p class="tiny" id="sheetLockHint" style="margin:8px 0 0; display:none;">Édition verrouillée: PV/SAN, caracs, compétences,combat.</p>
+        <p class="tiny" id="sheetLockHint" style="margin:8px 0 0; display:block;">Édition verrouillée: PV/SAN, caracs, compétences, combat.</p>
 
         <div class="gridSheet">
-
           <!-- PV -->
           <div class="card sub">
             <h3>Points de vie</h3>
@@ -204,7 +201,6 @@
             <div id="specList" class="specList"></div>
             <p class="hint">Ajout au fil des sessions.</p>
           </div>
-
         </div>
       </div>
     </section>
@@ -218,19 +214,21 @@
           <h2 style="margin:0;">Journal de bord</h2>
           <button id="openArchives" type="button">Archives</button>
         </div>
-       <div class="row" style="margin-top:10px;">
+
+        <div class="row" style="margin-top:10px;">
           <label class="field" style="flex:1;">
             <span>Date / heure</span>
             <input id="logWhen" type="datetime-local">
           </label>
         </div>
+
         <textarea id="log" rows="8" placeholder="Note active…"></textarea>
-      
+
         <div class="row right">
           <button id="clearLog" class="danger" type="button">Effacer</button>
           <button id="saveLog" type="button">Archiver</button>
         </div>
-      
+
         <p class="hint">“Archiver” envoie la note active dans les archives (datée), et remet la note active à vide.</p>
       </div>
 
@@ -282,7 +280,7 @@
     </section>
 
     <footer class="footnote">
-      <div class="tiny" id="activeProfileHint">PROFIL: -- • — • LOCAL SAVE • v?</div>
+      <div class="tiny" id="activeProfileHint">PROFIL: -- • — • LOCAL SAVE • v29</div>
     </footer>
 
     <!-- PROFIL MODAL -->
@@ -389,7 +387,7 @@
             <hr class="sep">
 
             <h2>Pack MJ (profil actif)</h2>
-            <p class="hint">Exporter/importer un pack MJ. Import = fusion intelligente (garde coches/notes si possible).</p>
+            <p class="hint">Exporter/importer un pack MJ. Import = fusion intelligente.</p>
 
             <div class="row">
               <button id="exportPackActive" type="button">Exporter Pack MJ</button>
@@ -412,46 +410,1326 @@
         </div>
       </div>
     </div>
-     <div id="archivesModal" class="modal" aria-hidden="true">
-        <div class="modalBackdrop" id="closeArchivesBackdrop"></div>
-      
-        <div class="modalPanel" role="dialog" aria-modal="true" aria-labelledby="archivesTitle">
-          <div class="modalHead">
-            <div>
-              <div class="modalTitle" id="archivesTitle">ARCHIVES</div>
-              <div class="tiny" id="archivesHint">Plus récent en haut</div>
-            </div>
-            <button id="closeArchives" class="miniBtn" type="button">FERMER</button>
+
+    <!-- ARCHIVES MODAL -->
+    <div id="archivesModal" class="modal" aria-hidden="true">
+      <div class="modalBackdrop" id="closeArchivesBackdrop"></div>
+
+      <div class="modalPanel" role="dialog" aria-modal="true" aria-labelledby="archivesTitle">
+        <div class="modalHead">
+          <div>
+            <div class="modalTitle" id="archivesTitle">ARCHIVES</div>
+            <div class="tiny" id="archivesHint">Plus récent en haut</div>
           </div>
-      
-          <div class="modalBody">
-            <div class="row" style="margin-top:0;">
-              <button id="exportArchives" type="button">Copier tout</button>
-              <button id="clearArchives" class="danger" type="button">Vider</button>
-            </div>
-      
-            <div id="archivesList" class="archivesList"></div>
+          <button id="closeArchives" class="miniBtn" type="button">FERMER</button>
+        </div>
+
+        <div class="modalBody">
+          <div class="row" style="margin-top:0;">
+            <button id="exportArchives" type="button">Copier tout</button>
+            <button id="clearArchives" class="danger" type="button">Vider</button>
           </div>
+
+          <div id="archivesList" class="archivesList"></div>
         </div>
       </div>
-  </main>
-  
-<script type="module" src="app.js?v=29"></script>
-  <script>
-  // MODE SECOURS: on enlève tous les Service Workers (sans DevTools)
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.getRegistrations()
-      .then(regs => Promise.all(regs.map(r => r.unregister())))
-      .catch(()=>{});
-  }
+    </div>
 
-  // On cache le boot au cas où (fail-safe)
-  const boot = document.getElementById("boot");
-  if (boot) {
-    boot.classList.remove("show");
-    boot.setAttribute("aria-hidden", "true");
-  }
-</script>
-  
+  </main>
+
+  <script>
+    const APP_VERSION = "v29";
+
+    // Helpers
+    const $ = (id) => document.getElementById(id);
+    const store = {
+      get(k, fallback){ try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } },
+      set(k, v){ localStorage.setItem(k, JSON.stringify(v)); },
+      del(k){ localStorage.removeItem(k); }
+    };
+
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function toDateTimeLocal(ts){
+      const d = new Date(ts);
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    }
+    function fromDateTimeLocal(str){
+      const d = new Date(str);
+      return Number.isNaN(d.getTime()) ? Date.now() : d.getTime();
+    }
+
+    // Boot (1 fois par session)
+    (function(){
+      const boot = $("boot");
+      const fill = $("bootFill");
+      if (!boot) return;
+
+      const KEY = "pipboy_boot_session_done";
+      const hide = () => {
+        boot.classList.remove("show");
+        boot.setAttribute("aria-hidden","true");
+        try { sessionStorage.setItem(KEY, "1"); } catch {}
+      };
+
+      try {
+        if (sessionStorage.getItem(KEY) === "1") {
+          boot.classList.remove("show");
+          boot.setAttribute("aria-hidden","true");
+          return;
+        }
+      } catch {}
+
+      boot.classList.add("show");
+      boot.setAttribute("aria-hidden","false");
+      boot.addEventListener("click", hide, { once:true });
+
+      if (!fill){ setTimeout(hide, 900); return; }
+
+      let p = 0;
+      const tick = () => {
+        p = Math.min(100, p + (10 + Math.random()*14));
+        fill.style.width = p + "%";
+        if (p >= 100) hide();
+        else setTimeout(tick, 140);
+      };
+      setTimeout(tick, 180);
+    })();
+
+    // Horloge
+    function tickClock(){
+      const d = new Date();
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      const el = $("clock");
+      if (el) el.textContent = `${hh}:${mm}`;
+    }
+    tickClock(); setInterval(tickClock, 1000);
+
+    // Tabs
+    document.querySelectorAll(".tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset.view;
+        if (!target) return;
+        document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+        btn.classList.add("active");
+        const section = document.getElementById(target);
+        if (section) section.classList.add("active");
+      });
+    });
+
+    // ===== Profils =====
+    const PROFILES_KEY = "pipboy_profiles";
+    const ACTIVE_KEY   = "pipboy_active_profile";
+
+    function uid(){
+      return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+    }
+
+    function defaultProfileData(){
+      return {
+        logDraft: "",
+        logDraftWhen: Date.now(),
+        logEntries: [],
+        inv: [],
+        quests: [],
+        sheet: {
+          locked: true,
+          hp: 10, hpMax: 20, wounds: "",
+          san: 10, sanMax: 20, troubles: "",
+          stats: {
+            for: { v: 10, max: 20 },
+            dex: { v: 10, max: 20 },
+            end: { v: 10, max: 20 },
+            int: { v: 10, max: 20 },
+            intu:{ v: 10, max: 20 }
+          },
+          skills: {},
+          combat: { ranged: 0, melee: 0, prot: 0, w1:{name:"", dmg:""}, w2:{name:"", dmg:""} },
+          specials: []
+        }
+      };
+    }
+
+    function normalizeProfileData(d){
+      const base = defaultProfileData();
+      const out = Object.assign({}, base, d || {});
+      out.inv = Array.isArray(out.inv) ? out.inv : [];
+      out.quests = Array.isArray(out.quests) ? out.quests : [];
+
+      out.logDraft = (typeof out.logDraft === "string") ? out.logDraft : "";
+      out.logDraftWhen = Number.isFinite(+out.logDraftWhen) ? +out.logDraftWhen : Date.now();
+      out.logEntries = Array.isArray(out.logEntries) ? out.logEntries : [];
+
+      out.sheet = Object.assign({}, base.sheet, (out.sheet || {}));
+      out.sheet.locked = !!out.sheet.locked;
+
+      out.sheet.hpMax = Number.isFinite(+out.sheet.hpMax) ? +out.sheet.hpMax : base.sheet.hpMax;
+      out.sheet.sanMax = Number.isFinite(+out.sheet.sanMax) ? +out.sheet.sanMax : base.sheet.sanMax;
+      out.sheet.hpMax = Math.max(1, out.sheet.hpMax);
+      out.sheet.sanMax = Math.max(1, out.sheet.sanMax);
+
+      out.sheet.hp = Number.isFinite(+out.sheet.hp) ? +out.sheet.hp : base.sheet.hp;
+      out.sheet.san = Number.isFinite(+out.sheet.san) ? +out.sheet.san : base.sheet.san;
+      out.sheet.hp = clamp(out.sheet.hp, 0, out.sheet.hpMax);
+      out.sheet.san = clamp(out.sheet.san, 0, out.sheet.sanMax);
+
+      out.sheet.wounds = (typeof out.sheet.wounds === "string") ? out.sheet.wounds : "";
+      out.sheet.troubles = (typeof out.sheet.troubles === "string") ? out.sheet.troubles : "";
+
+      out.sheet.skills = (out.sheet.skills && typeof out.sheet.skills === "object") ? out.sheet.skills : {};
+      out.sheet.specials = Array.isArray(out.sheet.specials) ? out.sheet.specials : [];
+
+      out.sheet.combat = Object.assign({}, base.sheet.combat, (out.sheet.combat || {}));
+      out.sheet.combat.w1 = Object.assign({}, base.sheet.combat.w1, (out.sheet.combat.w1 || {}));
+      out.sheet.combat.w2 = Object.assign({}, base.sheet.combat.w2, (out.sheet.combat.w2 || {}));
+
+      const s = (out.sheet.stats && typeof out.sheet.stats === "object") ? out.sheet.stats : {};
+      ["for","dex","end","int","intu"].forEach(k => {
+        let cur = s[k];
+        if (!cur || typeof cur !== "object") cur = base.sheet.stats[k];
+        const max = Math.max(1, Number.isFinite(+cur.max) ? +cur.max : base.sheet.stats[k].max);
+        const v = clamp(Number.isFinite(+cur.v) ? +cur.v : base.sheet.stats[k].v, 0, max);
+        s[k] = { v, max };
+      });
+      out.sheet.stats = s;
+
+      return out;
+    }
+
+    function getProfiles(){ return store.get(PROFILES_KEY, []); }
+    function setProfiles(arr){ store.set(PROFILES_KEY, arr); }
+    function getActiveId(){ return store.get(ACTIVE_KEY, null); }
+    function setActiveId(id){ store.set(ACTIVE_KEY, id); }
+    function profileKey(id){ return `pipboy_profile_${id}`; }
+
+    function getProfileData(id){
+      return normalizeProfileData(store.get(profileKey(id), defaultProfileData()));
+    }
+    function setProfileData(id, data){
+      store.set(profileKey(id), normalizeProfileData(data));
+    }
+    function deleteProfileData(id){ store.del(profileKey(id)); }
+
+    function ensureActiveProfile(){
+      const profiles = getProfiles();
+      let activeId = getActiveId();
+
+      if (!profiles.length){
+        const id = uid();
+        setProfiles([{ id, name:"P1", campaign:"ORION", createdAt: new Date().toISOString() }]);
+        setActiveId(id);
+        setProfileData(id, defaultProfileData());
+        return id;
+      }
+
+      if (!activeId || !profiles.find(p => p.id === activeId)){
+        activeId = profiles[0].id;
+        setActiveId(activeId);
+      }
+      return activeId;
+    }
+
+    function fitSvgText(textEl, maxWidth = 760, maxSize = 72, minSize = 28){
+      if (!textEl) return;
+      let size = maxSize;
+      textEl.setAttribute("font-size", String(size));
+      const getW = () => { try { return textEl.getComputedTextLength(); } catch { return 0; } };
+      let w = getW();
+      let guard = 0;
+      while (w > maxWidth && size > minSize && guard < 80){
+        size -= 2;
+        textEl.setAttribute("font-size", String(size));
+        w = getW();
+        guard++;
+      }
+    }
+
+    function refreshProfilesUI(){
+      const profiles = getProfiles();
+      const activeId = ensureActiveProfile();
+      const meta = profiles.find(p => p.id === activeId) || profiles[0];
+
+      const sel = $("profileSelect");
+      if (sel){
+        sel.innerHTML = "";
+        profiles.forEach(p => {
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.textContent = p.name;
+          if (p.id === activeId) opt.selected = true;
+          sel.appendChild(opt);
+        });
+      }
+
+      if ($("activeProfileHint")) $("activeProfileHint").textContent =
+        `PROFIL: ${meta?.name ?? "?"} • ${meta?.campaign ?? "—"} • LOCAL SAVE • ${APP_VERSION}`;
+
+      if ($("profileMiniLine")) $("profileMiniLine").textContent = `Campagne: ${meta?.campaign ?? "—"}`;
+
+      const svgName = $("profileNameSvg");
+      if (svgName){
+        svgName.textContent = meta?.name ?? "P1";
+        fitSvgText(svgName);
+      }
+
+      if ($("profileName")) $("profileName").value = meta?.name ?? "";
+      if ($("profileCampaign")) $("profileCampaign").value = meta?.campaign ?? "";
+    }
+
+    // ===== Modals =====
+    function showModal(id){
+      const m = $(id);
+      if (!m) return;
+      m.classList.add("show");
+      m.setAttribute("aria-hidden","false");
+    }
+    function hideModal(id){
+      const m = $(id);
+      if (!m) return;
+      m.classList.remove("show");
+      m.setAttribute("aria-hidden","true");
+    }
+
+    if ($("openProfile")) $("openProfile").addEventListener("click", () => { refreshProfilesUI(); showModal("profileModal"); });
+    if ($("closeProfile")) $("closeProfile").addEventListener("click", () => hideModal("profileModal"));
+    if ($("closeProfileBackdrop")) $("closeProfileBackdrop").addEventListener("click", () => hideModal("profileModal"));
+
+    if ($("openIO")) $("openIO").addEventListener("click", () => { refreshProfilesUI(); showModal("ioModal"); });
+    if ($("closeIO")) $("closeIO").addEventListener("click", () => hideModal("ioModal"));
+    if ($("closeIOBackdrop")) $("closeIOBackdrop").addEventListener("click", () => hideModal("ioModal"));
+
+    if ($("openArchives")) $("openArchives").addEventListener("click", () => { renderArchives(); showModal("archivesModal"); });
+    if ($("closeArchives")) $("closeArchives").addEventListener("click", () => hideModal("archivesModal"));
+    if ($("closeArchivesBackdrop")) $("closeArchivesBackdrop").addEventListener("click", () => hideModal("archivesModal"));
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if ($("archivesModal")?.classList.contains("show")) { hideModal("archivesModal"); return; }
+      if ($("ioModal")?.classList.contains("show")) { hideModal("ioModal"); return; }
+      if ($("profileModal")?.classList.contains("show")) hideModal("profileModal");
+    });
+
+    // ===== Sheet =====
+    const SKILLS = [
+      "adaptation","astrophysique_mathematiques","biologie_geologie","bricoler_bidouiller",
+      "comprendre_etrange","convaincre","courir_sauter_nager","deplacement_zero_g","discretion",
+      "garder_son_calme","observer","pilotage","programmation","reflexes","soigner","survie"
+    ];
+
+    const SKILLS_LABEL = {
+      adaptation: "Adaptation",
+      astrophysique_mathematiques: "Astrophysique / Mathématiques",
+      biologie_geologie: "Biologie / Géologie",
+      bricoler_bidouiller: "Bricoler / Bidouiller",
+      comprendre_etrange: "Comprendre l’étrange",
+      convaincre: "Convaincre",
+      courir_sauter_nager: "Courir / Sauter / Nager",
+      deplacement_zero_g: "Déplacement en zéro G",
+      discretion: "Discrétion",
+      garder_son_calme: "Garder son calme",
+      observer: "Observer",
+      pilotage: "Pilotage",
+      programmation: "Programmation",
+      reflexes: "Réflexes",
+      soigner: "Soigner",
+      survie: "Survie"
+    };
+
+    function buildSkillsUI(){
+      const box = $("skillsGrid");
+      if (!box) return;
+      box.innerHTML = "";
+      SKILLS.forEach(k => {
+        const wrap = document.createElement("label");
+        wrap.className = "field";
+        wrap.innerHTML = `
+          <span>${SKILLS_LABEL[k] || k}</span>
+          <input data-skill="${k}" type="number" min="0" max="100" step="1" value="0">
+        `;
+        box.appendChild(wrap);
+      });
+    }
+
+    function syncGauge(rangeEl, fillEl, labelEl, max){
+      if (!rangeEl || !fillEl || !labelEl) return;
+      const v = Number(rangeEl.value);
+      const m = Math.max(1, Number(max || rangeEl.max || 20));
+      const pct = Math.round((v / m) * 100);
+      fillEl.style.width = `${pct}%`;
+      labelEl.textContent = `${v}/${m}`;
+    }
+
+    function setDisabled(ids, disabled){
+      ids.forEach(id => {
+        const el = $(id);
+        if (el) el.disabled = !!disabled;
+      });
+    }
+    function setDisabledSelector(selector, disabled){
+      document.querySelectorAll(selector).forEach(el => el.disabled = !!disabled);
+    }
+
+    function applySheetLockUI(locked){
+      const btn = $("toggleSheetLock");
+      const hint = $("sheetLockHint");
+
+      if (btn){
+        btn.textContent = locked ? "🔒 ÉDITION" : "🔓 ÉDITION";
+        btn.setAttribute("aria-pressed", locked ? "true" : "false");
+        btn.classList.toggle("danger", locked);
+      }
+      if (hint) hint.style.display = locked ? "block" : "none";
+
+      setDisabled(["pjHp","pjHpMax","pjSan","pjSanMax","pjWounds","pjTroubles"], locked);
+
+      setDisabled([
+        "stat_for","stat_for_max",
+        "stat_dex","stat_dex_max",
+        "stat_end","stat_end_max",
+        "stat_int","stat_int_max",
+        "stat_intu","stat_intu_max"
+      ], locked);
+
+      setDisabledSelector('#skillsGrid input[data-skill]', locked);
+
+      setDisabled(["combat_ranged","combat_melee","combat_prot","w1_name","w1_dmg","w2_name","w2_dmg"], locked);
+    }
+
+    function loadSheetToUI(data){
+      const sh = data.sheet;
+
+      if ($("pjHpMax")) $("pjHpMax").value = sh.hpMax;
+      if ($("pjHp")) { $("pjHp").max = String(sh.hpMax); $("pjHp").value = String(sh.hp); }
+      syncGauge($("pjHp"), $("pjHpFill"), $("pjHpLabel"), sh.hpMax);
+      if ($("pjWounds")) $("pjWounds").value = sh.wounds || "";
+
+      if ($("pjSanMax")) $("pjSanMax").value = sh.sanMax;
+      if ($("pjSan")) { $("pjSan").max = String(sh.sanMax); $("pjSan").value = String(sh.san); }
+      syncGauge($("pjSan"), $("pjSanFill"), $("pjSanLabel"), sh.sanMax);
+      if ($("pjTroubles")) $("pjTroubles").value = sh.troubles || "";
+
+      ["for","dex","end","int","intu"].forEach(k => {
+        const r = $(`stat_${k}`);
+        const v = $(`stat_${k}_val`);
+        const m = $(`stat_${k}_max`);
+        const st = sh.stats[k];
+        if (m) m.value = st.max;
+        if (r) { r.max = String(st.max); r.value = String(st.v); }
+        if (v) v.textContent = String(st.v);
+      });
+
+      document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
+        const k = inp.getAttribute("data-skill");
+        inp.value = String(Number(sh.skills[k] ?? 0));
+      });
+
+      if ($("combat_ranged")) $("combat_ranged").value = Number(sh.combat.ranged ?? 0);
+      if ($("combat_melee")) $("combat_melee").value = Number(sh.combat.melee ?? 0);
+      if ($("combat_prot")) $("combat_prot").value = Number(sh.combat.prot ?? 0);
+      if ($("w1_name")) $("w1_name").value = sh.combat.w1?.name ?? "";
+      if ($("w1_dmg")) $("w1_dmg").value = sh.combat.w1?.dmg ?? "";
+      if ($("w2_name")) $("w2_name").value = sh.combat.w2?.name ?? "";
+      if ($("w2_dmg")) $("w2_dmg").value = sh.combat.w2?.dmg ?? "";
+
+      renderSpecials(sh.specials || []);
+      applySheetLockUI(!!sh.locked);
+    }
+
+    function readSheetFromUI(data){
+      const sh = data.sheet;
+
+      sh.hpMax = Math.max(1, Number($("pjHpMax")?.value || sh.hpMax));
+      sh.hp = clamp(Number($("pjHp")?.value || sh.hp), 0, sh.hpMax);
+      sh.wounds = $("pjWounds")?.value || "";
+
+      sh.sanMax = Math.max(1, Number($("pjSanMax")?.value || sh.sanMax));
+      sh.san = clamp(Number($("pjSan")?.value || sh.san), 0, sh.sanMax);
+      sh.troubles = $("pjTroubles")?.value || "";
+
+      ["for","dex","end","int","intu"].forEach(k => {
+        const max = Math.max(1, Number($(`stat_${k}_max`)?.value || sh.stats[k].max));
+        const v = clamp(Number($(`stat_${k}`)?.value || sh.stats[k].v), 0, max);
+        sh.stats[k] = { v, max };
+      });
+
+      const skills = {};
+      document.querySelectorAll("#skillsGrid input[data-skill]").forEach(inp => {
+        const k = inp.getAttribute("data-skill");
+        skills[k] = Number(inp.value || 0);
+      });
+      sh.skills = skills;
+
+      sh.combat = {
+        ranged: Number($("combat_ranged")?.value || 0),
+        melee: Number($("combat_melee")?.value || 0),
+        prot: Number($("combat_prot")?.value || 0),
+        w1: { name: $("w1_name")?.value || "", dmg: $("w1_dmg")?.value || "" },
+        w2: { name: $("w2_name")?.value || "", dmg: $("w2_dmg")?.value || "" }
+      };
+
+      return sh;
+    }
+
+    function saveSheet(){
+      const id = ensureActiveProfile();
+      const data = getProfileData(id);
+
+      if (data.sheet.locked){
+        applySheetLockUI(true);
+        loadSheetToUI(data);
+        return;
+      }
+
+      readSheetFromUI(data);
+      setProfileData(id, data);
+      loadSheetToUI(data);
+    }
+
+    // Specials
+    function renderSpecials(list){
+      const box = $("specList");
+      if (!box) return;
+      box.innerHTML = "";
+
+      if (!list || list.length === 0){
+        box.innerHTML = `<p class="hint">Aucune compétence spéciale.</p>`;
+        return;
+      }
+
+      list.forEach(sp => {
+        const row = document.createElement("div");
+        row.className = "specRow";
+        row.innerHTML = `
+          <div>${escapeHtml(sp.name || "")}</div>
+          <div style="text-align:right; font-weight:900;">${Number(sp.val || 0)}%</div>
+          <button class="mini danger" type="button" data-del="${sp.id}">X</button>
+        `;
+        box.appendChild(row);
+      });
+
+      box.querySelectorAll("button[data-del]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = ensureActiveProfile();
+          const data = getProfileData(id);
+          data.sheet.specials = (data.sheet.specials || []).filter(x => x.id !== btn.getAttribute("data-del"));
+          setProfileData(id, data);
+          renderSpecials(data.sheet.specials);
+        });
+      });
+    }
+
+    if ($("addSpec")){
+      $("addSpec").addEventListener("click", () => {
+        const name = ($("specName")?.value || "").trim();
+        const val = Number($("specVal")?.value || 0);
+        if (!name) return;
+
+        const id = ensureActiveProfile();
+        const data = getProfileData(id);
+        data.sheet.specials = Array.isArray(data.sheet.specials) ? data.sheet.specials : [];
+        data.sheet.specials.unshift({ id: uid(), name, val });
+        setProfileData(id, data);
+
+        if ($("specName")) $("specName").value = "";
+        if ($("specVal")) $("specVal").value = "";
+        renderSpecials(data.sheet.specials);
+      });
+    }
+
+    // ===== Journal (draft + archives) =====
+    function getJournalData(){
+      const id = ensureActiveProfile();
+      const data = getProfileData(id);
+      return { data, draft: data.logDraft || "", draftWhen: data.logDraftWhen || Date.now(), entries: data.logEntries || [] };
+    }
+
+    function setJournalData(draft, draftWhen, entries){
+      const id = ensureActiveProfile();
+      const data = getProfileData(id);
+      data.logDraft = String(draft || "");
+      data.logDraftWhen = Number.isFinite(+draftWhen) ? +draftWhen : Date.now();
+      data.logEntries = Array.isArray(entries) ? entries : [];
+      setProfileData(id, data);
+    }
+
+    function formatTs(ts){
+      const d = new Date(ts);
+      if (Number.isNaN(d.getTime())) return String(ts);
+      return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    }
+
+    function renderArchives(){
+      const box = $("archivesList");
+      if (!box) return;
+
+      const { entries } = getJournalData();
+      const sorted = entries.slice().sort((a,b)=> (b.ts||0) - (a.ts||0));
+
+      if (sorted.length === 0){
+        box.innerHTML = `<p class="hint">Aucune archive pour ce profil.</p>`;
+        return;
+      }
+
+      box.innerHTML = sorted.map(e => `
+        <div class="archItem" data-id="${e.id}">
+          <div class="archHead">
+            <div class="archDate">${escapeHtml(formatTs(e.ts))}</div>
+            <div class="archActions">
+              <button class="mini" type="button" data-act="copy" data-id="${e.id}">Copier</button>
+              <button class="mini danger" type="button" data-act="del" data-id="${e.id}">X</button>
+            </div>
+          </div>
+          <div class="archText">${escapeHtml(e.text || "")}</div>
+        </div>
+      `).join("");
+    }
+
+    if ($("archivesList")){
+      $("archivesList").addEventListener("click", async (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        const act = t.getAttribute("data-act");
+        const id = t.getAttribute("data-id");
+        if (!act || !id) return;
+
+        const { entries, draft, draftWhen } = getJournalData();
+        const item = entries.find(x => x.id === id);
+        if (!item) return;
+
+        if (act === "copy"){
+          try { await navigator.clipboard.writeText(item.text || ""); alert("Copié ✅"); }
+          catch { alert("Copie impossible"); }
+          return;
+        }
+
+        if (act === "del"){
+          if (!confirm("Supprimer cette archive ?")) return;
+          setJournalData(draft, draftWhen, entries.filter(x => x.id !== id));
+          renderArchives();
+        }
+      });
+    }
+
+    if ($("exportArchives")){
+      $("exportArchives").addEventListener("click", async () => {
+        const { entries } = getJournalData();
+        const sorted = entries.slice().sort((a,b)=> (b.ts||0) - (a.ts||0));
+        const text = sorted.map(e => `[${formatTs(e.ts)}]\n${e.text}\n`).join("\n");
+        try { await navigator.clipboard.writeText(text); alert("Archives copiées ✅"); }
+        catch { alert("Copie impossible"); }
+      });
+    }
+
+    if ($("clearArchives")){
+      $("clearArchives").addEventListener("click", () => {
+        if (!confirm("Vider toutes les archives de ce profil ?")) return;
+        const { draft, draftWhen } = getJournalData();
+        setJournalData(draft, draftWhen, []);
+        renderArchives();
+      });
+    }
+
+    function loadJournalToUI(){
+      const { draft, draftWhen } = getJournalData();
+      if ($("log")) $("log").value = draft;
+      if ($("logWhen")) $("logWhen").value = toDateTimeLocal(draftWhen || Date.now());
+    }
+
+    function saveDraftFromUI(){
+      const text = $("log") ? $("log").value : "";
+      const whenStr = $("logWhen") ? $("logWhen").value : "";
+      const ts = whenStr ? fromDateTimeLocal(whenStr) : Date.now();
+      const { entries } = getJournalData();
+      setJournalData(text, ts, entries);
+    }
+
+    if ($("log")) $("log").addEventListener("input", () => saveDraftFromUI());
+    if ($("logWhen")) $("logWhen").addEventListener("change", () => saveDraftFromUI());
+
+    if ($("saveLog")){
+      $("saveLog").addEventListener("click", () => {
+        const text = ($("log") ? $("log").value : "").trim();
+        if (!text) return;
+
+        const whenStr = $("logWhen") ? $("logWhen").value : "";
+        const ts = whenStr ? fromDateTimeLocal(whenStr) : Date.now();
+
+        const { entries } = getJournalData();
+        entries.unshift({ id: uid(), ts, text });
+
+        setJournalData("", Date.now(), entries);
+
+        if ($("log")) $("log").value = "";
+        if ($("logWhen")) $("logWhen").value = toDateTimeLocal(Date.now());
+        renderArchives();
+      });
+    }
+
+    if ($("clearLog")){
+      $("clearLog").addEventListener("click", () => {
+        const { entries } = getJournalData();
+        setJournalData("", Date.now(), entries);
+        if ($("log")) $("log").value = "";
+        if ($("logWhen")) $("logWhen").value = toDateTimeLocal(Date.now());
+      });
+    }
+
+    // ===== Inventaire =====
+    function renderInv(){
+      const id = ensureActiveProfile();
+      const data = getProfileData(id);
+      const itemsUl = $("items");
+      if (!itemsUl) return;
+
+      const arr = Array.isArray(data.inv) ? data.inv : [];
+      itemsUl.innerHTML = "";
+
+      arr.forEach((txt, idx) => {
+        const li = document.createElement("li");
+        li.innerHTML = `<span>${escapeHtml(txt)}</span><button class="mini" data-i="${idx}" type="button">X</button>`;
+        itemsUl.appendChild(li);
+      });
+
+      itemsUl.querySelectorAll("button.mini").forEach(b => {
+        b.addEventListener("click", () => {
+          const id2 = ensureActiveProfile();
+          const d2 = getProfileData(id2);
+          const inv2 = Array.isArray(d2.inv) ? d2.inv : [];
+          inv2.splice(Number(b.dataset.i), 1);
+          d2.inv = inv2;
+          setProfileData(id2, d2);
+          renderInv();
+        });
+      });
+    }
+
+    if ($("addItem")){
+      $("addItem").addEventListener("click", () => {
+        const input = $("itemInput");
+        const val = input ? input.value.trim() : "";
+        if (!val) return;
+
+        const id = ensureActiveProfile();
+        const data = getProfileData(id);
+        data.inv = Array.isArray(data.inv) ? data.inv : [];
+        data.inv.unshift(val);
+        setProfileData(id, data);
+
+        if (input) input.value = "";
+        renderInv();
+      });
+    }
+
+    if ($("clearInv")){
+      $("clearInv").addEventListener("click", () => {
+        const id = ensureActiveProfile();
+        const data = getProfileData(id);
+        data.inv = [];
+        setProfileData(id, data);
+        renderInv();
+      });
+    }
+
+    // ===== Quêtes =====
+    function newQuest(title){
+      return { id: uid(), title, status: "EN_COURS", notes: "", objectives: [] };
+    }
+
+    function getQuestData(){
+      const id = ensureActiveProfile();
+      const data = getProfileData(id);
+      return Array.isArray(data.quests) ? data.quests : [];
+    }
+    function setQuestData(quests){
+      const id = ensureActiveProfile();
+      const data = getProfileData(id);
+      data.quests = quests;
+      setProfileData(id, data);
+    }
+
+    function renderQuests(){
+      const questsBox = $("quests");
+      if (!questsBox) return;
+
+      const mode = $("questFilter") ? $("questFilter").value : "BOARD";
+      const quests = getQuestData();
+
+      const cEn = quests.filter(q => q.status === "EN_COURS").length;
+      const cOk = quests.filter(q => q.status === "OK").length;
+      const cRa = quests.filter(q => q.status === "RATEE").length;
+      if ($("questCounts")) $("questCounts").textContent = `EN COURS (${cEn}) • OK (${cOk}) • RATÉE (${cRa})`;
+
+      const statusLabel = { EN_COURS: "EN COURS", OK: "OK", RATEE: "RATÉE" };
+      const order = { EN_COURS: 0, OK: 1, RATEE: 2 };
+
+      let shown = quests.slice();
+      if (mode === "BOARD"){
+        shown.sort((a,b) => (order[a.status] ?? 9) - (order[b.status] ?? 9));
+      } else if (mode !== "ALL"){
+        shown = shown.filter(q => q.status === mode);
+      }
+
+      if (shown.length === 0){
+        questsBox.innerHTML = `<p class="hint">Aucune quête pour ce profil (ou filtre vide).</p>`;
+        return;
+      }
+
+      let html = "";
+      let lastStatus = null;
+
+      for (const q of shown){
+        if (mode === "BOARD" && q.status !== lastStatus){
+          lastStatus = q.status;
+          html += `<div class="questSection"><div class="questSectionTitle">${statusLabel[q.status] ?? q.status}</div></div>`;
+        }
+
+        const obj = Array.isArray(q.objectives) ? q.objectives : [];
+        const objHtml = obj.map(o => `
+          <li class="objLine">
+            <label class="objLabel">
+              <input type="checkbox" data-act="toggleObj" data-q="${q.id}" data-o="${o.id}" ${o.done ? "checked":""}>
+              <span>${escapeHtml(o.text)}</span>
+            </label>
+            <button class="mini" type="button" data-act="delObj" data-q="${q.id}" data-o="${o.id}">X</button>
+          </li>
+        `).join("");
+
+        html += `
+          <div class="quest" data-q="${q.id}">
+            <div class="questHead">
+              <div class="questTitle">${escapeHtml(q.title)}</div>
+              <button class="mini danger" type="button" data-act="delQuest" data-q="${q.id}">SUPPR</button>
+            </div>
+
+            <div class="row">
+              <select data-act="setStatus" data-q="${q.id}">
+                <option value="EN_COURS" ${q.status==="EN_COURS"?"selected":""}>EN COURS</option>
+                <option value="OK" ${q.status==="OK"?"selected":""}>OK</option>
+                <option value="RATEE" ${q.status==="RATEE"?"selected":""}>RATÉE</option>
+              </select>
+            </div>
+
+            <textarea rows="3" placeholder="Notes…" data-act="notes" data-q="${q.id}">${escapeHtml(q.notes || "")}</textarea>
+
+            <div class="row">
+              <input type="text" placeholder="Ajouter un objectif…" data-act="objInput" data-q="${q.id}">
+              <button type="button" data-act="addObj" data-q="${q.id}">+</button>
+            </div>
+
+            <ul class="objList">${objHtml || `<li class="hint">Aucun objectif.</li>`}</ul>
+          </div>
+        `;
+      }
+
+      questsBox.innerHTML = html;
+    }
+
+    if ($("addQuest")){
+      $("addQuest").addEventListener("click", () => {
+        const title = $("questTitle") ? $("questTitle").value.trim() : "";
+        if (!title) return;
+        const quests = getQuestData();
+        quests.unshift(newQuest(title));
+        setQuestData(quests);
+        if ($("questTitle")) $("questTitle").value = "";
+        renderQuests();
+      });
+    }
+
+    if ($("questFilter")) $("questFilter").addEventListener("change", renderQuests);
+
+    if ($("clearDoneObjectives")){
+      $("clearDoneObjectives").addEventListener("click", () => {
+        const quests = getQuestData();
+        quests.forEach(q => {
+          q.objectives = (Array.isArray(q.objectives) ? q.objectives : []).filter(o => !o.done);
+        });
+        setQuestData(quests);
+        renderQuests();
+      });
+    }
+
+    if ($("quests")){
+      $("quests").addEventListener("click", (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        const act = t.getAttribute("data-act");
+        const qid = t.getAttribute("data-q");
+        const oid = t.getAttribute("data-o");
+        if (!act || !qid) return;
+
+        const quests = getQuestData();
+        const q = quests.find(x => x.id === qid);
+        if (!q) return;
+
+        if (act === "delQuest"){
+          setQuestData(quests.filter(x => x.id !== qid));
+          renderQuests();
+          return;
+        }
+
+        if (act === "addObj"){
+          const input = $("quests").querySelector(`input[data-act="objInput"][data-q="${qid}"]`);
+          const text = (input && input.value) ? input.value.trim() : "";
+          if (!text) return;
+          q.objectives = Array.isArray(q.objectives) ? q.objectives : [];
+          q.objectives.push({ id: uid(), text, done:false });
+          setQuestData(quests);
+          renderQuests();
+          return;
+        }
+
+        if (act === "delObj" && oid){
+          q.objectives = (Array.isArray(q.objectives) ? q.objectives : []).filter(o => o.id !== oid);
+          setQuestData(quests);
+          renderQuests();
+          return;
+        }
+      });
+
+      $("quests").addEventListener("change", (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        const act = t.getAttribute("data-act");
+        const qid = t.getAttribute("data-q");
+        const oid = t.getAttribute("data-o");
+
+        const quests = getQuestData();
+        const q = quests.find(x => x.id === qid);
+        if (!q) return;
+
+        if (act === "setStatus" && t instanceof HTMLSelectElement){
+          q.status = t.value;
+          setQuestData(quests);
+          renderQuests();
+          return;
+        }
+
+        if (act === "toggleObj" && t instanceof HTMLInputElement && oid){
+          q.objectives = Array.isArray(q.objectives) ? q.objectives : [];
+          const o = q.objectives.find(x => x.id === oid);
+          if (o) o.done = !!t.checked;
+          setQuestData(quests);
+          renderQuests();
+        }
+      });
+
+      $("quests").addEventListener("blur", (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        const act = t.getAttribute("data-act");
+        const qid = t.getAttribute("data-q");
+        if (act !== "notes" || !qid) return;
+
+        const quests = getQuestData();
+        const q = quests.find(x => x.id === qid);
+        if (!q || !(t instanceof HTMLTextAreaElement)) return;
+
+        q.notes = t.value;
+        setQuestData(quests);
+      }, true);
+    }
+
+    // ===== IO (export/import) =====
+    const backupBox = $("backupBox");
+    const backupProfileBox = $("backupProfileBox");
+    const packProfileBox = $("packProfileBox");
+
+    function exportAll(){
+      const profiles = getProfiles();
+      const payload = {
+        v: 3,
+        exportedAt: new Date().toISOString(),
+        activeProfileId: getActiveId(),
+        profiles,
+        dataByProfile: {}
+      };
+      profiles.forEach(p => payload.dataByProfile[p.id] = getProfileData(p.id));
+      if (backupBox) backupBox.value = JSON.stringify(payload, null, 2);
+    }
+
+    function applyImport(){
+      if (!backupBox) return;
+      let obj;
+      try { obj = JSON.parse(backupBox.value); }
+      catch { alert("JSON invalide 😵‍💫"); return; }
+
+      if (Array.isArray(obj.profiles) && obj.dataByProfile && typeof obj.dataByProfile === "object"){
+        const incoming = obj.profiles
+          .filter(p => p && typeof p.id === "string" && p.id.trim())
+          .map(p => ({
+            id: p.id,
+            name: (p.name || "Profil").trim(),
+            campaign: (p.campaign || "").trim(),
+            createdAt: p.createdAt || new Date().toISOString()
+          }));
+
+        if (!incoming.length){ alert("Backup invalide: aucun profil."); return; }
+
+        setProfiles(incoming);
+        incoming.forEach(p => setProfileData(p.id, obj.dataByProfile[p.id] || defaultProfileData()));
+
+        const requestedActive = (typeof obj.activeProfileId === "string") ? obj.activeProfileId : null;
+        const activeOk = requestedActive && incoming.some(p => p.id === requestedActive);
+        setActiveId(activeOk ? requestedActive : incoming[0].id);
+
+        loadActiveProfileToUI();
+        alert("Import complet appliqué ✅");
+        return;
+      }
+
+      alert("Format non reconnu 😵‍💫");
+    }
+
+    function exportActiveProfile(){
+      const id = ensureActiveProfile();
+      if (!id || !backupProfileBox) return;
+
+      const profiles = getProfiles();
+      const meta = profiles.find(p => p.id === id) || { id, name:"Profil", campaign:"" };
+      const payload = { v: 2, exportedAt: new Date().toISOString(), profile: meta, data: getProfileData(id) };
+      backupProfileBox.value = JSON.stringify(payload, null, 2);
+    }
+
+    function applyImportActiveProfile(){
+      const id = ensureActiveProfile();
+      if (!id || !backupProfileBox) return;
+
+      let obj;
+      try { obj = JSON.parse(backupProfileBox.value); }
+      catch { alert("JSON invalide 😵‍💫"); return; }
+
+      if (obj && obj.data && typeof obj.data === "object"){
+        setProfileData(id, obj.data);
+        if (obj.profile){
+          const profiles = getProfiles();
+          const p = profiles.find(x => x.id === id);
+          if (p){
+            if (obj.profile.name) p.name = String(obj.profile.name).trim();
+            if (obj.profile.campaign !== undefined) p.campaign = String(obj.profile.campaign).trim();
+            setProfiles(profiles);
+          }
+        }
+        loadActiveProfileToUI();
+        alert("Profil actif mis à jour ✅");
+        return;
+      }
+
+      alert("Format non reconnu 😵‍💫");
+    }
+
+    function normalizeQuest(q){
+      const out = Object.assign({ id: uid(), title:"", status:"EN_COURS", notes:"", objectives:[], mj:{} }, q || {});
+      out.objectives = Array.isArray(out.objectives) ? out.objectives : [];
+      out.mj = (out.mj && typeof out.mj === "object") ? out.mj : {};
+      return out;
+    }
+
+    function mergeObjectives(existing, incoming){
+      const ex = Array.isArray(existing) ? existing : [];
+      const inc = Array.isArray(incoming) ? incoming : [];
+      const exById = new Map(ex.filter(o => o && o.id).map(o => [o.id, o]));
+      const merged = [];
+
+      for (const o of inc){
+        const obj = Object.assign({ id: uid(), text:"", done:false }, o || {});
+        const same = obj.id ? exById.get(obj.id) : null;
+        if (same) merged.push({ id: obj.id, text: (obj.text ?? same.text ?? ""), done: !!same.done });
+        else merged.push({ id: obj.id, text: obj.text ?? "", done: !!obj.done });
+      }
+
+      const incIds = new Set(merged.map(x => x.id));
+      for (const o of ex){
+        if (o && o.id && !incIds.has(o.id)) merged.push({ id:o.id, text:o.text ?? "", done: !!o.done });
+      }
+      return merged;
+    }
+
+    function mergeQuests(existingQuests, incomingQuests){
+      const ex = (Array.isArray(existingQuests) ? existingQuests : []).map(normalizeQuest);
+      const inc = (Array.isArray(incomingQuests) ? incomingQuests : []).map(normalizeQuest);
+
+      const exById = new Map(ex.filter(q => q.id).map(q => [q.id, q]));
+      const merged = [];
+
+      for (const q of inc){
+        const same = q.id ? exById.get(q.id) : null;
+        if (same){
+          merged.push({
+            id: q.id,
+            title: q.title || same.title,
+            status: same.status || q.status || "EN_COURS",
+            notes: (same.notes && String(same.notes).trim()) ? same.notes : (q.notes || ""),
+            objectives: mergeObjectives(same.objectives, q.objectives),
+            mj: Object.assign({}, same.mj || {}, q.mj || {})
+          });
+        } else merged.push(q);
+      }
+
+      const incIds = new Set(merged.map(x => x.id));
+      for (const q of ex){
+        if (q && q.id && !incIds.has(q.id)) merged.push(q);
+      }
+      return merged;
+    }
+
+    function exportPackActive(){
+      const id = ensureActiveProfile();
+      if (!id || !packProfileBox) return;
+
+      const profiles = getProfiles();
+      const meta = profiles.find(p => p.id === id) || { id, name:"Profil", campaign:"ORION" };
+      const data = getProfileData(id);
+
+      const payload = {
+        kind: "pipboy_pack_mj",
+        v: 3,
+        exportedAt: new Date().toISOString(),
+        campaignId: (meta.campaign || "").trim() || "ORION",
+        targetProfileName: meta.name,
+        briefing: "",
+        quests: (Array.isArray(data.quests) ? data.quests : []).map(normalizeQuest)
+      };
+
+      packProfileBox.value = JSON.stringify(payload, null, 2);
+    }
+
+    function applyPackActive(){
+      const id = ensureActiveProfile();
+      if (!id || !packProfileBox) return;
+
+      let obj;
+      try { obj = JSON.parse(packProfileBox.value); }
+      catch { alert("Pack MJ: JSON invalide 😵‍💫"); return; }
+
+      if (!obj || obj.kind !== "pipboy_pack_mj" || !Array.isArray(obj.quests)){
+        alert("Ce JSON n’est pas un Pack MJ PipBoy.");
+        return;
+      }
+
+      const data = getProfileData(id);
+      data.quests = mergeQuests(data.quests, obj.quests);
+
+      if (obj.briefing && String(obj.briefing).trim()){
+        const stamp = new Date().toISOString().slice(0,10);
+        const header = `[PACK MJ ${obj.campaignId || ""} ${stamp}]`.trim();
+        const block = `${header}\n${obj.briefing}\n\n`;
+        data.logDraft = block + (data.logDraft || "");
+      }
+
+      setProfileData(id, data);
+      loadActiveProfileToUI();
+      alert("Pack MJ appliqué ✅");
+    }
+
+    function applyPackAllProfiles(){
+      const profiles = getProfiles();
+      if (!profiles.length || !packProfileBox) return;
+
+      let obj;
+      try { obj = JSON.parse(packProfileBox.value); }
+      catch { alert("Pack MJ: JSON invalide 😵‍💫"); return; }
+
+      if (!obj || obj.kind !== "pipboy_pack_mj" || !Array.isArray(obj.quests)){
+        alert("Ce JSON n’est pas un Pack MJ PipBoy.");
+        return;
+      }
+
+      if (!confirm(`Appliquer ce Pack MJ à TOUS les profils ? (${profiles.length})`)) return;
+
+      for (const p of profiles){
+        const data = getProfileData(p.id);
+        data.quests = mergeQuests(data.quests, obj.quests);
+
+        if (obj.briefing && String(obj.briefing).trim()){
+          const stamp = new Date().toISOString().slice(0,10);
+          const header = `[PACK MJ ${obj.campaignId || ""} ${stamp}]`.trim();
+          const block = `${header}\n${obj.briefing}\n\n`;
+          data.logDraft = block + (data.logDraft || "");
+        }
+
+        setProfileData(p.id, data);
+      }
+
+      loadActiveProfileToUI();
+      alert("Pack MJ appliqué à tous ✅");
+    }
+
+    function applyPackCampaign(){
+      const profiles = getProfiles();
+      if (!profiles.length || !packProfileBox) return;
+
+      let obj;
+      try { obj = JSON.parse(packProfileBox.value); }
+      catch { alert("Pack MJ: JSON invalide 😵‍💫"); return; }
+
+      if (!obj || obj.kind !== "pipboy_pack_mj" || !Array.isArray(obj.quests)){
+        alert("Ce JSON n’est pas un Pack MJ PipBoy.");
+        return;
+      }
+
+      const campaignId = String(obj.campaignId || "").trim();
+      if (!campaignId){ alert("Pack MJ: campaignId manquant."); return; }
+
+      const targets = profiles.filter(p => String(p.campaign || "").trim() === campaignId);
+      if (!targets.length){ alert(`Aucun profil avec la campagne "${campaignId}".`); return; }
+
+      if (!confirm(`Appliquer Pack MJ campagne "${campaignId}" à ${targets.length} profil(s) ?`)) return;
+
+      for (const p of targets){
+        const data = getProfileData(p.id);
+        data.quests = mergeQuests(data.quests, obj.quests);
+
+        if (obj.briefing && String(obj.briefing).trim()){
+          const stamp = new Date().toISOString().slice(0,10);
+          const header = `[PACK MJ ${campaignId} ${stamp}]`;
+          const block = `${header}\n${obj.briefing}\n\n`;
+          data.logDraft = block + (data.logDraft || "");
+        }
+
+        setProfileData(p.id, data);
+      }
+
+      loadActiveProfileToUI();
+      alert(`Pack MJ appliqué campagne "${campaignId}" ✅`);
+    }
+
+    // IO listeners
+    if ($("exportAll")) $("exportAll").addEventListener("click", exportAll);
+    if ($("applyImport")) $("applyImport").addEventListener("click", applyImport);
+    if ($("clearBox") && backupBox) $("clearBox").addEventListener("click", () => backupBox.value = "");
+
+    if ($("exportActive")) $("exportActive").addEventListener("click", exportActiveProfile);
+    if ($("applyImportActive")) $("applyImportActive").addEventListener("click", applyImportActiveProfile);
+    if ($("clearProfileBox") && backupProfileBox) $("clearProfileBox").addEventListener("click", () => backupProfileBox.value = "");
+
+    if ($("exportPackActive")) $("exportPackActive").addEventListener("click", exportPackActive);
+    if ($("applyPackActive")) $("applyPackActive").addEventListener("click", applyPackActive);
+    if ($("applyPackAllProfiles")) $("applyPackAllProfiles").addEventListener("click", applyPackAllProfiles);
+    if ($("applyPackCampaign")) $("applyPackCampaign").addEventListener("click", applyPackCampaign);
+    if ($("clearPackProfileBox") && packProfileBox) $("clearPackProfileBox").addEventListener("click", () => packProfileBox.value = "");
+
+    // ===== Profil modal actions =====
+    if ($("newProfile")){
+      $("newProfile").addEventListener("click", () => {
+        const profiles = getProfiles();
+        const id = uid();
+        const name = `P${profiles.length + 1}`;
+        profiles.push({ id, name, campaign: "ORION", createdAt: new Date().toISOString() });
+        setProfiles(profiles);
+        setProfileData(id, defaultProfileData());
+        setActiveId(id);
+        loadActiveProfileToUI();
+      });
+    }
+
+    if ($("saveProfileName")){
+      $("saveProfileName").addEventListener("click", () => {
+        const id = ensureActiveProfile();
+        const newName = ($("profileName")?.value || "").trim();
+        const newCampaign = ($("profileCampaign")?.value || "").trim();
+
+        const profiles = getProfiles();
+        const p = profiles.find(x => x.id === id);
+        if (p){
+          if (newName) p.name = newName;
+          p.campaign = newCampaign;
+          setProfiles(profiles);
+        }
+        loadActiveProfileToUI();
+      });
+    }
+
+    if ($("deleteProfile")){
+      $("deleteProfile").addEventListener("click", () => {
+        const profiles = getProfiles();
+        if (profiles.length <= 1){ alert("Impossible: il faut garder au moins 1 profil."); return; }
+
+        const id = ensureActiveProfile();
+        const p = profiles.find(x => x.id === id);
+        if (!confirm(`Supprimer le profil "${p ? p.name : id}" ?`)) return;
+
+        const filtered = profiles.filter(x => x.id !== id);
+        setProfiles(filtered);
+        deleteProfileData(id);
+
+        setActiveId(filtered[0].id);
+        loadActiveProfileToUI();
+      });
+    }
+
+    if ($("profileSelect")){
+      $("profileSelect").addEventListener("change", () => {
+        setActiveId($("profileSelect").value);
+        loadActiveProfileToUI();
+      });
+    }
+
+    // ===== Lock button =====
+    if ($("toggleSheetLock")){
+      $("toggleSheetLock").addEventListener("click", () => {
+        const id = ensureActiveProfile();
+        const data = getProfileData(id);
+        data.sheet.locked = !data.sheet.locked;
+        setProfileData(id, data);
+        applySheetLockUI(data.sheet.locked);
+      });
+    }
+
+    // ===== Sheet listeners =====
+    function hook(id, evt="input"){
+      const el = $(id);
+      if (!el) return;
+      el.addEventListener(evt, () => saveSheet());
+    }
+
+    ["pjHp","pjHpMax","pjSan","pjSanMax","pjWounds","pjTroubles",
+     "combat_ranged","combat_melee","combat_prot","w1_name","w1_dmg","w2_name","w2_dmg"
+    ].forEach(id => hook(id,"input"));
+    ["pjHpMax","pjSanMax"].forEach(id => hook(id,"change"));
+
+    ["for","dex","end","int","intu"].forEach(k => {
+      hook(`stat_${k}`,"input");
+      hook(`stat_${k}_max`,"input");
+      hook(`stat_${k}_max`,"change");
+    });
+
+    function loadActiveProfileToUI(){
+      const id = ensureActiveProfile();
+      const data = getProfileData(id);
+
+      refreshProfilesUI();
+
+      // Sheet
+      buildSkillsUI();
+      loadSheetToUI(data);
+
+      // Journal
+      loadJournalToUI();
+      renderArchives();
+
+      // Inv / Quests
+      renderInv();
+      renderQuests();
+    }
+
+    // Init
+    ensureActiveProfile();
+    loadActiveProfileToUI();
+
+    // NOTE: service worker volontairement désactivé ici (trop de cache qui casse)
+    // if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js", { scope: "./" });
+  </script>
 </body>
 </html>
