@@ -1646,7 +1646,7 @@
         const id = ensureActiveProfile();
         const data = getProfileData(id);
 
-        if (typeof obj.log === "string") data.log = obj.log;
+        if (typeof obj.log === "string") data.logDraft = obj.log;
         if (Array.isArray(obj.inv)) data.inv = obj.inv;
         if (Array.isArray(obj.quests)) data.quests = obj.quests;
         if (obj.sheet && typeof obj.sheet === "object") data.sheet = obj.sheet;
@@ -1734,7 +1734,7 @@
         if (obj.profile && typeof obj.profile === "object") meta = obj.profile;
       } else if (obj && typeof obj === "object" && (obj.sheet || obj.log || obj.inv || obj.quests)) {
         data = {
-          log: (typeof obj.log === "string") ? obj.log : "",
+          logDraft: (typeof obj.log === "string") ? obj.log : "",
           inv: Array.isArray(obj.inv) ? obj.inv : [],
           quests: Array.isArray(obj.quests) ? obj.quests : [],
           sheet: (obj.sheet && typeof obj.sheet === "object") ? obj.sheet : defaultProfileData().sheet
